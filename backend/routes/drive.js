@@ -1,9 +1,13 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 const { google } = require('googleapis');
 
 const router = express.Router();
+
+// File upload setup
+const upload = multer({ dest: 'uploads/' });
 
 const CLIENT_SECRET_PATH = path.join(__dirname, '../client_secret.json');
 const TOKEN_PATH = path.join(__dirname, '../', process.env.GOOGLE_TOKEN_PATH);
@@ -13,7 +17,11 @@ const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 function authorize() {
   const credentials = JSON.parse(fs.readFileSync(CLIENT_SECRET_PATH, 'utf8'));
   const { client_secret, client_id, redirect_uris } = credentials.web;
-  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, process.env.GOOGLE_REDIRECT_URI);
+  const oAuth2Client = new google.auth.OAuth2(
+    client_id,
+    client_secret,
+    process.env.GOOGLE_REDIRECT_URI
+  );
 
   if (fs.existsSync(TOKEN_PATH)) {
     const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
@@ -28,7 +36,11 @@ function authorize() {
 router.get('/auth', (req, res) => {
   const credentials = JSON.parse(fs.readFileSync(CLIENT_SECRET_PATH, 'utf8'));
   const { client_secret, client_id, redirect_uris } = credentials.web;
-  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, process.env.GOOGLE_REDIRECT_URI);
+  const oAuth2Client = new google.auth.OAuth2(
+    client_id,
+    client_secret,
+    process.env.GOOGLE_REDIRECT_URI
+  );
 
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -43,7 +55,11 @@ router.get('/callback', async (req, res) => {
   const code = req.query.code;
   const credentials = JSON.parse(fs.readFileSync(CLIENT_SECRET_PATH, 'utf8'));
   const { client_secret, client_id, redirect_uris } = credentials.web;
-  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, process.env.GOOGLE_REDIRECT_URI);
+  const oAuth2Client = new google.auth.OAuth2(
+    client_id,
+    client_secret,
+    process.env.GOOGLE_REDIRECT_URI
+  );
 
   try {
     const { tokens } = await oAuth2Client.getToken(code);
@@ -55,18 +71,19 @@ router.get('/callback', async (req, res) => {
   }
 });
 
-// Upload route (simulate with a sample file)
-router.post('/upload', async (req, res) => {
+// 🔁 UPDATED Upload route using multer
+router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     const auth = authorize();
     const drive = google.drive({ version: 'v3', auth });
 
     const fileMetadata = {
-      name: 'sample.txt',
+      name: req.file.originalname,
     };
+
     const media = {
-      mimeType: 'text/plain',
-      body: fs.createReadStream(path.join(__dirname, '../sample.txt')),
+      mimeType: req.file.mimetype,
+      body: fs.createReadStream(req.file.path),
     };
 
     const file = await drive.files.create({
@@ -74,6 +91,9 @@ router.post('/upload', async (req, res) => {
       media: media,
       fields: 'id, name',
     });
+
+    // Clean up temp file
+    fs.unlinkSync(req.file.path);
 
     res.send({ fileId: file.data.id, fileName: file.data.name });
   } catch (error) {
