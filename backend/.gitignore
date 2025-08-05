@@ -1,0 +1,15 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+
+# Google credentials
+client_secret.json
+
+# Logs
+logs
+*.log
+
+# System files
+.DS_Store
