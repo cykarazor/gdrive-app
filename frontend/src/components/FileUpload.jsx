@@ -15,22 +15,21 @@ const FileUpload = () => {
   };
 
   const handleUpload = async () => {
-    if (!file) {
-      console.warn('No file selected');
-      return;
-    }
+    if (!file) return;
 
     const formData = new FormData();
     formData.append('file', file);
+
+    const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+    console.log('API base URL:', apiBaseUrl);
     console.log('Uploading file:', file.name);
 
     try {
-      console.log('Sending POST request to:', `${import.meta.env.VITE_API_BASE_URL}/api/drive/upload`);
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/drive/upload`, formData);
+      const res = await axios.post(`${apiBaseUrl}/api/drive/upload`, formData);
       console.log('Upload response:', res.data);
       setUploadResult(res.data);
     } catch (err) {
-      console.error('Upload error:', err.response?.data || err.message || err);
+      console.error('Upload error:', err);
       setError('Upload failed. Please try again.');
     }
   };
