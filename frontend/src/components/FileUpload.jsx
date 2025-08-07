@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 
 const FileUpload = () => {
@@ -7,22 +7,30 @@ const FileUpload = () => {
   const [error, setError] = useState('');
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    console.log('File selected:', selectedFile);
+    setFile(selectedFile);
     setUploadResult(null);
     setError('');
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file) {
+      console.warn('No file selected');
+      return;
+    }
 
     const formData = new FormData();
     formData.append('file', file);
+    console.log('Uploading file:', file.name);
 
     try {
+      console.log('Sending POST request to:', `${import.meta.env.VITE_API_BASE_URL}/api/drive/upload`);
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/drive/upload`, formData);
+      console.log('Upload response:', res.data);
       setUploadResult(res.data);
     } catch (err) {
-      console.error(err);
+      console.error('Upload error:', err.response?.data || err.message || err);
       setError('Upload failed. Please try again.');
     }
   };
