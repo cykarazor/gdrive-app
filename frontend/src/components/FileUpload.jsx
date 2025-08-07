@@ -19,7 +19,7 @@ const FileUpload = () => {
     formData.append('file', file);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/drive/upload', formData);
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/drive/upload`, formData);
       setUploadResult(res.data);
     } catch (err) {
       console.error(err);
