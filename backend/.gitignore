@@ -5,11 +5,20 @@ node_modules/
 .env
 
 # Google credentials
-client_secret.json
+/config/credentials.json
 
 # Logs
-logs
+logs/
 *.log
 
 # System files
 .DS_Store
+
+# Uploads folder (temp files)
+uploads/
+
+# Token file (do NOT commit token.json)
+/config/token.json
+
+# Google API client secrets
+client_secret.json
