@@ -1,4 +1,3 @@
-// frontend/src/components/FileUpload.jsx
 import { useState } from 'react';
 import axios from 'axios';
 
@@ -6,13 +5,14 @@ const FileUpload = () => {
   const [file, setFile] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
   const [error, setError] = useState('');
+  const [authExpired, setAuthExpired] = useState(false);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    console.log('File selected:', selectedFile);
     setFile(selectedFile);
     setUploadResult(null);
     setError('');
+    setAuthExpired(false);
   };
 
   const handleUpload = async () => {
@@ -22,16 +22,21 @@ const FileUpload = () => {
     formData.append('file', file);
 
     const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
-    console.log('API base URL:', apiBaseUrl);
-    console.log('Uploading file:', file.name);
 
     try {
       const res = await axios.post(`${apiBaseUrl}/api/drive/upload`, formData);
-      console.log('Upload response:', res.data);
       setUploadResult(res.data);
+      setError('');
+      setAuthExpired(false);
     } catch (err) {
-      console.error('Upload error:', err);
-      setError('Upload failed. Please try again.');
+      if (err.response?.status === 401 && err.response?.data?.error) {
+        // Token expired or invalid error from backend
+        setAuthExpired(true);
+        setError('');
+      } else {
+        setError('Upload failed. Please try again.');
+        setAuthExpired(false);
+      }
     }
   };
 
@@ -50,6 +55,15 @@ const FileUpload = () => {
       )}
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      {authExpired && (
+        <div style={{ color: 'orange' }}>
+          <p>Your OAuth token has expired or is invalid.</p>
+          <p>
+            Please <a href={`${process.env.REACT_APP_API_BASE_URL}/auth/google`} target="_blank" rel="noopener noreferrer">re-authorize</a> the app.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

@@ -39,7 +39,14 @@ module.exports = function (auth) {
       res.json({ fileId: file.data.id, fileName: file.data.name });
     } catch (err) {
       console.error('Upload failed:', err);
-      res.status(500).send('Upload failed');
+
+      if (err.code === 401 || (err.errors && err.errors[0].reason === 'authError')) {
+      return res.status(401).json({
+        error: 'OAuth token expired or invalid. Please re-authorize by visiting /auth/google.',
+      });
+    }
+
+      res.status(500).send('Upload failed due to server error');
     }
   });
 
