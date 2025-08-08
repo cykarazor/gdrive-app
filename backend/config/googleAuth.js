@@ -16,6 +16,8 @@ function getOAuth2Client() {
   }
 
   const conf = credentials.installed || credentials.web;
+
+  // Use env var first, then try to detect Render redirect URI, then fallback to first URI
   const redirectUri =
   process.env.GOOGLE_REDIRECT_URI ||
   conf.redirect_uris.find((uri) => uri.includes('render.com')) ||
@@ -31,6 +33,9 @@ function getAuthUrl(oAuth2Client) {
   });
 }
 
+/*
+  Your existing setCredentials function loads token.json and saves updated tokens on refresh
+*/
 function setCredentials(oAuth2Client) {
   let token = loadToken();
   if (!token) {
@@ -46,10 +51,21 @@ function setCredentials(oAuth2Client) {
   });
 }
 
+/*
+  NEW helper function to log token for you during OAuth callback,
+  so you can copy it into Render environment variable easily.
+*/
+function logTokenForRenderEnv(token) {
+  console.log('\n=== COPY THIS TOKEN INTO RENDER ENV VAR (GOOGLE_TOKEN_JSON) ===\n');
+  console.log(JSON.stringify(token));
+  console.log('\n=== END OF TOKEN ===\n');
+}
+
 module.exports = {
   getOAuth2Client,
   getAuthUrl,
   saveToken,
   setCredentials,
   TOKEN_PATH,
+  logTokenForRenderEnv, // Export this new helper
 };
