@@ -50,5 +50,24 @@ module.exports = function (auth) {
     }
   });
 
+  // ✅ New route to list files
+  router.get('/list', async (req, res) => {
+    try {
+      const response = await drive.files.list({
+        pageSize: 10,
+        fields: 'files(id, name, mimeType, modifiedTime)',
+        orderBy: 'modifiedTime desc',
+      });
+
+      res.status(200).json({ files: response.data.files });
+    } catch (error) {
+      console.error('❌ Error listing files:', error.message);
+      if (error.message.includes('invalid_grant') || error.message.includes('token')) {
+        return res.status(401).json({ message: '❌ Token expired. Please re-authenticate via /auth/google.' });
+      }
+      res.status(500).json({ message: 'Failed to list files' });
+    }
+  });
+
   return router;
 };
