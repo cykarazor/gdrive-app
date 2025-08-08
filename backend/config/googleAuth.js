@@ -67,6 +67,7 @@ function setCredentials(oAuth2Client) {
   if (!token) {
     throw new Error('No token found in token.json');
   }
+  console.log('Loaded token:', token);
   oAuth2Client.setCredentials(token);
   console.log('✅ Token loaded from token.json');
 

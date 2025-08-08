@@ -1,12 +1,20 @@
 const fs = require('fs');
 const path = require('path');
 
-const TOKEN_PATH = path.join(__dirname, '..', 'config', 'token.json');
+const TOKEN_PATH = path.join(__dirname, '../config/token.json');
 
 function loadToken() {
+  if (process.env.GOOGLE_TOKEN_JSON) {
+    try {
+      return JSON.parse(process.env.GOOGLE_TOKEN_JSON);
+    } catch (e) {
+      console.error('Invalid GOOGLE_TOKEN_JSON environment variable');
+      return null;
+    }
+  }
+  
   if (fs.existsSync(TOKEN_PATH)) {
-    const data = fs.readFileSync(TOKEN_PATH, 'utf8');
-    return JSON.parse(data);
+    return JSON.parse(fs.readFileSync(TOKEN_PATH));
   }
   return null;
 }

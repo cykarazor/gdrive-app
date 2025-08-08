@@ -35,3 +35,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+// to get new token, run from backend node server.js then visit: http://localhost:5000/auth/google
