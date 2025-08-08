@@ -14,7 +14,17 @@ app.use(express.json());
 
 // 1. Get and configure OAuth2 client
 const oAuth2Client = getOAuth2Client();
-setCredentials(oAuth2Client); // This will load from token.json or env
+
+try {
+  setCredentials(oAuth2Client);
+} catch (err) {
+  console.error('❌ Failed to load OAuth token:', err.message);
+  console.log('ℹ️ You may need to authenticate via /auth/google');
+}
+
+// Use the auth routes
+const authRoutes = require('./routes/auth');
+app.use('/', authRoutes);
 
 // 2. Pass auth to drive router
 const driveRoutes = require('./routes/drive')(oAuth2Client);

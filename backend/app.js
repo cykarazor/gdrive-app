@@ -50,3 +50,5 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);
 });
+
+//http://localhost:5000/auth/google

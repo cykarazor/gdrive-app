@@ -1,10 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const { google } = require('googleapis');
+const { loadToken, saveToken, TOKEN_PATH } = require('../utils/tokenManager'); //New
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 const CREDENTIALS_PATH = path.join(__dirname, 'credentials.json');
-const TOKEN_PATH = path.join(__dirname, 'token.json');
+// New Delete const TOKEN_PATH = path.join(__dirname, 'token.json');
 
 function getOAuth2Client() {
   let credentials;
@@ -28,6 +29,7 @@ function getAuthUrl(oAuth2Client) {
   });
 }
 
+/*
 function saveToken(token) {
   if (!process.env.RENDER) {
     fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
@@ -36,7 +38,8 @@ function saveToken(token) {
     console.log('ℹ️ Running on Render - skipping token save to file.');
   }
 }
-
+*/
+/*
 function setCredentials(oAuth2Client) {
   let token;
 
@@ -57,6 +60,22 @@ function setCredentials(oAuth2Client) {
     throw new Error('No token found');
   }
 }
+*/
+
+function setCredentials(oAuth2Client) {
+  let token = loadToken();
+  if (!token) {
+    throw new Error('No token found in token.json');
+  }
+  oAuth2Client.setCredentials(token);
+  console.log('✅ Token loaded from token.json');
+
+  oAuth2Client.on('tokens', (tokens) => {
+    token = { ...token, ...tokens };
+    saveToken(token);
+  });
+}
+
 
 module.exports = {
   getOAuth2Client,
