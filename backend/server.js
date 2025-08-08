@@ -1,16 +1,27 @@
+// backend/server.js
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+
+const {
+  getOAuth2Client,
+  setCredentials,
+} = require('./config/googleAuth'); // <== your helper file
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Google Drive routes
-const driveRoutes = require('./routes/drive');
+// 1. Get and configure OAuth2 client
+const oAuth2Client = getOAuth2Client();
+setCredentials(oAuth2Client); // This will load from token.json or env
+
+// 2. Pass auth to drive router
+const driveRoutes = require('./routes/drive')(oAuth2Client);
 app.use('/api/drive', driveRoutes);
 
+// 3. Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

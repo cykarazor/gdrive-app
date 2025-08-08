@@ -1,3 +1,4 @@
+// frontend/src/components/FileUpload.jsx
 import { useState } from 'react';
 import axios from 'axios';
 
