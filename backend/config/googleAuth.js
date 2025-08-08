@@ -1,4 +1,3 @@
-// backend/config/googleAuth.js
 const fs = require('fs');
 const path = require('path');
 const { google } = require('googleapis');
@@ -8,10 +7,15 @@ const CREDENTIALS_PATH = path.join(__dirname, 'credentials.json');
 const TOKEN_PATH = path.join(__dirname, 'token.json');
 
 function getOAuth2Client() {
-  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
-  const conf = credentials.installed || credentials.web;
+  let credentials;
 
-  // Pick 3rd redirect URI if exists, otherwise first
+  if (process.env.GOOGLE_CREDENTIALS_JSON) {
+    credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+  } else {
+    credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
+  }
+
+  const conf = credentials.installed || credentials.web;
   const redirectUri = conf.redirect_uris[2] || conf.redirect_uris[0];
 
   return new google.auth.OAuth2(conf.client_id, conf.client_secret, redirectUri);
@@ -25,7 +29,6 @@ function getAuthUrl(oAuth2Client) {
 }
 
 function saveToken(token) {
-  // Only save token locally if running locally (not on Render)
   if (!process.env.RENDER) {
     fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
     console.log('✅ Token stored at:', TOKEN_PATH);
@@ -36,6 +39,7 @@ function saveToken(token) {
 
 function setCredentials(oAuth2Client) {
   let token;
+
   if (process.env.GOOGLE_TOKEN_JSON) {
     try {
       token = JSON.parse(process.env.GOOGLE_TOKEN_JSON);
