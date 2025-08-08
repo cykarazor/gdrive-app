@@ -20,6 +20,11 @@ try {
 } catch (err) {
   console.error('❌ Failed to load OAuth token:', err.message);
   console.log('ℹ️ You may need to authenticate via /auth/google');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Visit http://localhost:5000/auth/google to authorize');
+  } else {
+    console.log('Visit https://<your-render-url>/auth/google to authorize');
+  }
 }
 
 // Use the auth routes
@@ -34,6 +39,5 @@ app.use('/api/drive', driveRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log('ℹ️ To authorize, visit /auth/google');
 });
-
-// to get new token, run from backend node server.js then visit: http://localhost:5000/auth/google
