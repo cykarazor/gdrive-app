@@ -1,13 +1,27 @@
+// App.jsx
+
+import { useEffect, useState } from 'react';
 import FileUpload from './components/FileUpload';
-import DriveFilesList from './components/DriveFilesList';
+import DriveFiles from './components/DriveFiles';
+import { fetchDriveFiles } from './utils/driveHelpers'; // NEW: helper to fetch files
 
 function App() {
+  const [files, setFiles] = useState([]); // NEW: files state
+
+  // NEW: function to load files from backend
+  const loadFiles = async () => {
+    const fetchedFiles = await fetchDriveFiles();
+    setFiles(fetchedFiles);
+  };
+
+  useEffect(() => {
+    loadFiles(); // NEW: fetch files on first load
+  }, []);
+
   return (
-    <div className="App" style={{ maxWidth: 900, margin: 'auto', padding: 20 }}>
-      <h1>Google Drive Manager</h1>
-      <FileUpload />
-      <hr style={{ margin: '40px 0' }} />
-      <DriveFilesList />
+    <div className="App">
+      <FileUpload onUploadSuccess={loadFiles} /> {/* NEW: pass refresh callback */}
+      <DriveFiles files={files} /> {/* NEW: pass file list to display */}
     </div>
   );
 }
