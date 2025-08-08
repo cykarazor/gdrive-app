@@ -6,13 +6,14 @@ const FileUpload = () => {
   const [uploadResult, setUploadResult] = useState(null);
   const [error, setError] = useState('');
   const [authExpired, setAuthExpired] = useState(false);
+  const [authUrl, setAuthUrl] = useState('');
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    setFile(selectedFile);
+    setFile(e.target.files[0]);
     setUploadResult(null);
     setError('');
     setAuthExpired(false);
+    setAuthUrl('');
   };
 
   const handleUpload = async () => {
@@ -28,14 +29,17 @@ const FileUpload = () => {
       setUploadResult(res.data);
       setError('');
       setAuthExpired(false);
+      setAuthUrl('');
     } catch (err) {
-      if (err.response?.status === 401 && err.response?.data?.error) {
-        // Token expired or invalid error from backend
+      const { response } = err;
+      if (response?.status === 401 && response?.data?.error === 'TokenExpired') {
         setAuthExpired(true);
-        setError('');
+        setAuthUrl(`${apiBaseUrl}${response.data.authUrl || '/auth/google'}`);
+        setError(response.data.message || 'Authorization error. Please reauthorize.');
       } else {
         setError('Upload failed. Please try again.');
         setAuthExpired(false);
+        setAuthUrl('');
       }
     }
   };
@@ -54,14 +58,22 @@ const FileUpload = () => {
         </div>
       )}
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && !authExpired && <p style={{ color: 'red' }}>{error}</p>}
 
       {authExpired && (
         <div style={{ color: 'orange' }}>
-          <p>Your OAuth token has expired or is invalid.</p>
-          <p>
-            Please <a href={`${process.env.REACT_APP_API_BASE_URL}/auth/google`} target="_blank" rel="noopener noreferrer">re-authorize</a> the app.
-          </p>
+          <p>{error}</p>
+          {authUrl && (
+            <p>
+              <a
+                href={authUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Reauthorize now
+              </a>
+            </p>
+          )}
         </div>
       )}
     </div>

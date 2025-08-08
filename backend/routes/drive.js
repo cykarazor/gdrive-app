@@ -38,16 +38,23 @@ module.exports = function (auth) {
       fs.unlinkSync(req.file.path);
       res.json({ fileId: file.data.id, fileName: file.data.name });
     } catch (err) {
-      console.error('Upload failed:', err);
+  console.error('Upload failed:', err);
 
-      if (err.code === 401 || (err.errors && err.errors[0].reason === 'authError')) {
-      return res.status(401).json({
-        error: 'OAuth token expired or invalid. Please re-authorize by visiting /auth/google.',
-      });
-    }
+  if (
+    err.code === 401 ||
+    (err.errors && err.errors[0].reason === 'authError') ||
+    err.message.includes('invalid_grant') ||
+    err.message.includes('token')
+  ) {
+    return res.status(401).json({
+      error: 'TokenExpired',
+      message: 'Your Google Drive token has expired. Click here to reauthorize.',
+      authUrl: '/auth/google'  // 👈 optional helper
+    });
+  }
 
-      res.status(500).send('Upload failed due to server error');
-    }
+  res.status(500).send('Upload failed due to server error');
+}
   });
 
   // ✅ New route to list files
@@ -62,9 +69,18 @@ module.exports = function (auth) {
       res.status(200).json({ files: response.data.files });
     } catch (error) {
       console.error('❌ Error listing files:', error.message);
-      if (error.message.includes('invalid_grant') || error.message.includes('token')) {
-        return res.status(401).json({ message: '❌ Token expired. Please re-authenticate via /auth/google.' });
-      }
+      if (
+      error.code === 401 ||
+      (error.errors && error.errors[0].reason === 'authError') ||
+      error.message.includes('invalid_grant') ||
+      error.message.includes('token')
+    ) {
+      return res.status(401).json({
+        error: 'TokenExpired',
+        message: 'Your Google Drive token has expired. Click here to reauthorize.',
+        authUrl: '/auth/google'  // 👈 optional helper
+      });
+    }
       res.status(500).json({ message: 'Failed to list files' });
     }
   });
