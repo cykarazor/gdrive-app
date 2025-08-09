@@ -20,10 +20,16 @@ function getOAuth2Client() {
   const conf = credentials.installed || credentials.web;
 
   // Use env var first, then try to detect Render redirect URI, then fallback to first URI
-  const redirectUri =
+  /*const redirectUri =
     process.env.GOOGLE_REDIRECT_URI ||
     conf.redirect_uris.find((uri) => uri.includes('render.com')) ||
     conf.redirect_uris[0];
+    */
+
+  const redirectUri = process.env.NODE_ENV === 'production'
+  ? process.env.GOOGLE_REDIRECT_URI_PROD
+  : process.env.GOOGLE_REDIRECT_URI;
+  
 
   return new google.auth.OAuth2(conf.client_id, conf.client_secret, redirectUri);
 }
