@@ -62,7 +62,7 @@ module.exports = function (auth) {
     try {
       const response = await drive.files.list({
         pageSize: 10,
-        fields: 'files(id, name, mimeType, modifiedTime)',
+        fields: 'files(id, name, mimeType, modifiedTime, size)',
         orderBy: 'modifiedTime desc',
       });
 
