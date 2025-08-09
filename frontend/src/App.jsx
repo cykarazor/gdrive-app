@@ -1,27 +1,31 @@
-// App.jsx
-
 import { useEffect, useState } from 'react';
 import FileUpload from './components/FileUpload';
 import DriveFiles from './components/DriveFilesList';
-import { fetchDriveFiles } from './utils/driveHelpers'; // NEW: helper to fetch files
+import Header from './components/Header';
+import Footer from './components/Footer';
+import { fetchDriveFiles } from './utils/driveHelpers';
+import { Container } from '@mui/material'; // NEW
 
 function App() {
-  const [files, setFiles] = useState([]); // NEW: files state
+  const [files, setFiles] = useState([]);
 
-  // NEW: function to load files from backend
   const loadFiles = async () => {
     const fetchedFiles = await fetchDriveFiles();
     setFiles(fetchedFiles);
   };
 
   useEffect(() => {
-    loadFiles(); // NEW: fetch files on first load
+    loadFiles();
   }, []);
 
   return (
     <div className="App">
-      <FileUpload onUploadSuccess={loadFiles} /> {/* NEW: pass refresh callback */}
-      <DriveFiles files={files} /> {/* NEW: pass file list to display */}
+      <Header />
+      <Container sx={{ mt: 3 }}>
+        <FileUpload onUploadSuccess={loadFiles} />
+        <DriveFiles files={files} />
+      </Container>
+      <Footer />
     </div>
   );
 }
