@@ -1,11 +1,9 @@
 // frontend/src/components/DriveFilesList.jsx
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Typography,
-  TableSortLabel, TablePagination, CircularProgress,
-  Box,
+  TableSortLabel, TablePagination,
 } from '@mui/material';
 
 // Simple MIME type to emoji/icon mapping for display
@@ -18,34 +16,13 @@ const mimeTypeIcons = {
   'application/vnd.google-apps.folder': '📁',
 };
 
-function DriveFilesList() {
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+function DriveFilesList({ files }) {  // receive files as prop
 
   // Pagination & sorting state
   const [orderBy, setOrderBy] = useState('modifiedTime');
   const [order, setOrder] = useState('desc');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
-
-  useEffect(() => {
-    const fetchFiles = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const res = await axios.get(`${apiBaseUrl}/api/drive/list`);
-        setFiles(res.data.files);
-      } catch (err) {
-        setError('Failed to load files. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFiles();
-  }, [apiBaseUrl]);
 
   // Sort files based on orderBy and order
   const sortedFiles = [...files].sort((a, b) => {
@@ -74,7 +51,7 @@ function DriveFilesList() {
     setOrderBy(property);
   };
 
-  const handleChangePage = (event, newPage) => {
+  const handleChangePage = (_event, newPage) => {
     setPage(newPage);
   };
 
@@ -89,19 +66,11 @@ function DriveFilesList() {
         Google Drive Files
       </Typography>
 
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {error}
+      {files.length === 0 ? (
+        <Typography sx={{ mb: 2 }} align="center">
+          No files found
         </Typography>
-      )}
-
-      {!loading && !error && (
+      ) : (
         <>
           <TableContainer sx={{ maxHeight: 440 }}>
             <Table stickyHeader aria-label="Google Drive files table">
@@ -130,23 +99,15 @@ function DriveFilesList() {
               </TableHead>
 
               <TableBody>
-                {paginatedFiles.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} align="center">
-                      No files found
+                {paginatedFiles.map((file) => (
+                  <TableRow hover tabIndex={-1} key={file.id}>
+                    <TableCell>
+                      {mimeTypeIcons[file.mimeType] || '📁'} {file.name}
                     </TableCell>
+                    <TableCell>{file.mimeType}</TableCell>
+                    <TableCell>{new Date(file.modifiedTime).toLocaleString()}</TableCell>
                   </TableRow>
-                ) : (
-                  paginatedFiles.map((file) => (
-                    <TableRow hover tabIndex={-1} key={file.id}>
-                      <TableCell>
-                        {mimeTypeIcons[file.mimeType] || '📁'} {file.name}
-                      </TableCell>
-                      <TableCell>{file.mimeType}</TableCell>
-                      <TableCell>{new Date(file.modifiedTime).toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
           </TableContainer>

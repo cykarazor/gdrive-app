@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 
-const FileUpload = () => {
+const FileUpload = ({ onUploadSuccess }) => {
   const [file, setFile] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
   const [error, setError] = useState('');
@@ -31,6 +31,12 @@ const FileUpload = () => {
       setError('');
       setAuthExpired(false);
       setAuthUrl('');
+
+      // 🆕 Call parent callback to refresh file list
+    if (onUploadSuccess) {
+      onUploadSuccess();
+    }
+
     } catch (err) {
       const { response } = err;
       if (response?.status === 401 && response?.data?.error === 'TokenExpired') {

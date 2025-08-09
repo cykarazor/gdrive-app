@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import FileUpload from './components/FileUpload';
-import DriveFiles from './components/DriveFiles';
+import DriveFiles from './components/DriveFilesList';
 import { fetchDriveFiles } from './utils/driveHelpers'; // NEW: helper to fetch files
 
 function App() {
