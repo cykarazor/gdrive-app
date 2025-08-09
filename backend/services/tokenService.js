@@ -1,6 +1,23 @@
 // backend/services/tokenService.js
 const GoogleToken = require('../models/GoogleToken'); // Your Mongoose model
 
+async function loadToken(userId = 'defaultUser') {
+  try {
+    const doc = await GoogleToken.findOne({ userId });
+    if (!doc) return null;
+    return {
+      access_token: doc.accessToken,
+      refresh_token: doc.refreshToken,
+      scope: doc.scope,
+      token_type: doc.tokenType,
+      expiry_date: doc.expiryDate.getTime(), // convert Date to timestamp
+    };
+  } catch (error) {
+    console.error('Error loading token from DB:', error);
+    return null;
+  }
+}
+
 async function saveToken(tokens, userId = 'defaultUser') {
   try {
     let doc = await GoogleToken.findOne({ userId });
