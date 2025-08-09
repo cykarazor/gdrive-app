@@ -24,7 +24,7 @@ router.get('/oauth2callback', async (req, res) => {
     const { tokens } = await oAuth2Client.getToken(code);
     oAuth2Client.setCredentials(tokens);
     //saveToken(tokens);
-    await saveToken(tokens);  // <-- save the token using the service
+    await saveToken(tokens, 'defaultUser');  // <-- save the token using the service
 
     // Log token to console for easy copy/paste from Render logs
     logTokenForRenderEnv(tokens);
