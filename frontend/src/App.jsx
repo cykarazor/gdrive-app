@@ -26,8 +26,7 @@ function App() {
       <Header />
       <Container sx={{ mt: 3 }}>
         <FileUpload onUploadSuccess={loadFiles} />
-        <DriveFiles files={files} loading={loading} /> {/* NEW: pass loading */}
-        <DriveFiles files={files} />
+        <DriveFiles files={files} loading={loading} /> {/* NEW: pass loading */}        
       </Container>
       <Footer />
     </div>
