@@ -1,9 +1,10 @@
 // frontend/src/components/FileUpload.jsx
 import { useState } from 'react';
 import axios from 'axios';
-import { Button, Typography, Box } from '@mui/material'; // NEW: Box & Typography for layout
+import { Button, Typography, Box } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import GoogleIcon from '@mui/icons-material/Google'; // NEW: for Google brand feel
+import GoogleIcon from '@mui/icons-material/Google';
+import UploadLoading from './UploadLoading'; // NEW: Import the loading spinner component
 
 const FileUpload = ({ onUploadSuccess }) => {
   const [file, setFile] = useState(null);
@@ -11,6 +12,7 @@ const FileUpload = ({ onUploadSuccess }) => {
   const [error, setError] = useState('');
   const [authExpired, setAuthExpired] = useState(false);
   const [authUrl, setAuthUrl] = useState('');
+  const [loading, setLoading] = useState(false); // NEW: Loading state
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -22,6 +24,8 @@ const FileUpload = ({ onUploadSuccess }) => {
 
   const handleUpload = async () => {
     if (!file) return;
+
+    setLoading(true); // NEW: start loading spinner
 
     const formData = new FormData();
     formData.append('file', file);
@@ -50,6 +54,8 @@ const FileUpload = ({ onUploadSuccess }) => {
         setAuthExpired(false);
         setAuthUrl('');
       }
+    } finally {
+      setLoading(false); // NEW: stop loading spinner after attempt
     }
   };
 
@@ -74,7 +80,8 @@ const FileUpload = ({ onUploadSuccess }) => {
       <input 
         type="file" 
         onChange={handleFileChange} 
-        style={{ marginBottom: '1rem' }} 
+        style={{ marginBottom: '1rem' }}
+        disabled={loading} // Disable file input while loading 
       />
 
       {/* Upload button */}
@@ -92,9 +99,13 @@ const FileUpload = ({ onUploadSuccess }) => {
             backgroundColor: '#357ae8',
           },
         }}
+        disabled={loading}  // NEW: disable button while uploading
       >
         Upload
       </Button>
+
+      {/* NEW: Show spinner and message when uploading */}
+      {loading && <UploadLoading loading={loading} />}
 
       {/* Upload result */}
       {uploadResult && (
