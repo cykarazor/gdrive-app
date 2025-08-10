@@ -29,7 +29,7 @@ export default function DriveLoadingPremium({ loading }) {
     }, 2500);
 
     return () => clearInterval(interval);
-  }, [loading]);
+  }, [loading, messages.length]);
 
   return (
     <Fade in={loading} timeout={{ enter: 400, exit: 300 }} unmountOnExit>
