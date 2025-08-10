@@ -1,5 +1,5 @@
 // frontend/src/components/FileUpload.jsx
-import { useState } from 'react';
+import { useState, useRef } from 'react'; // Added useRef
 import axios from 'axios';
 import { Button, Typography, Box } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -8,6 +8,7 @@ import UploadLoading from './UploadLoading'; // NEW: Import the loading spinner 
 
 const FileUpload = ({ onUploadSuccess }) => {
   const [file, setFile] = useState(null);
+  const fileInputRef = useRef(null); // NEW: ref for file input element
   const [uploadResult, setUploadResult] = useState(null);
   const [error, setError] = useState('');
   const [authExpired, setAuthExpired] = useState(false);
@@ -38,6 +39,12 @@ const FileUpload = ({ onUploadSuccess }) => {
       setError('');
       setAuthExpired(false);
       setAuthUrl('');
+
+      // Clear file input and reset file state
+      setFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = null;
+      }
 
       // 🆕 Call parent callback to refresh file list
       if (onUploadSuccess) {
@@ -82,6 +89,7 @@ const FileUpload = ({ onUploadSuccess }) => {
         onChange={handleFileChange} 
         style={{ marginBottom: '1rem' }}
         disabled={loading} // Disable file input while loading 
+        ref={fileInputRef}  // NEW: attach ref to clear input
       />
 
       {/* Upload button */}
