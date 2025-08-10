@@ -7,6 +7,8 @@ import {
   Box,
 } from '@mui/material';
 
+import DriveLoadingPremium from './DriveLoadingPremium'; // NEW
+
 // MUI Icons
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -43,7 +45,7 @@ const mimeTypeIcons = {
   'application/vnd.google-apps.folder': <FolderIcon color="warning" />,
 };
 
-function DriveFilesList({ files }) {
+function DriveFilesList({ files, loading }) {
   const [orderBy, setOrderBy] = useState('modifiedTime');
   const [order, setOrder] = useState('desc');
   const [page, setPage] = useState(0);
@@ -92,7 +94,10 @@ function DriveFilesList({ files }) {
         Google Drive Files
       </Typography>
 
-      {files.length === 0 ? (
+      {/* NEW: Show spinner when loading */}
+      {loading ? (
+        <DriveLoadingPremium loading={loading} /> // NEW
+      ) : files.length === 0 ? (      
         <Typography sx={{ mb: 2 }} align="center">
           No files found
         </Typography>
