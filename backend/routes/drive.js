@@ -95,5 +95,50 @@ router.get('/list', async (req, res) => {
   }
 });
 
+
+// Create folder route
+router.post('/create-folder', async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: 'Folder name is required' });
+    }
+
+    // Folder metadata
+    const fileMetadata = {
+      name: name.trim(),
+      mimeType: 'application/vnd.google-apps.folder',
+    };
+
+    const folder = await drive.files.create({
+      resource: fileMetadata,
+      fields: 'id, name',
+    });
+
+    res.status(200).json({
+      folderId: folder.data.id,
+      folderName: folder.data.name,
+    });
+  } catch (err) {
+    console.error('Create folder failed:', err);
+
+    if (
+      err.code === 401 ||
+      (err.errors && err.errors[0].reason === 'authError') ||
+      err.message.includes('invalid_grant') ||
+      err.message.includes('token')
+    ) {
+      return res.status(401).json({
+        error: 'TokenExpired',
+        message: 'Your Google Drive token has expired. Click here to reauthorize.',
+        authUrl: '/auth/google',
+      });
+    }
+
+    res.status(500).json({ message: 'Failed to create folder due to server error' });
+  }
+});
+
   return router;
 };

@@ -4,25 +4,38 @@ import { Drawer, List, ListItem, ListItemText, Box } from "@mui/material";
 import Header from "../Header";
 import Footer from "../Footer";
 import UploadModal from "../modals/UploadModal";
+import CreateFolderModal from '../modals/CreateFolderModal'; // NEW
 
 const drawerWidth = 240;
 const headerHeight = 64;
 
 export default function MainLayout({
   children,
-  onCreateFolderClick,
-  onReloadFiles,  // new prop
+  // onCreateFolderClick, // OLD - no longer used directly for drawer button
+  onReloadFiles,  // new prop to notify parent to reload files
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false); // NEW
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const handleUploadClick = () => setUploadModalOpen(true);
   const handleUploadClose = () => setUploadModalOpen(false);
 
+  // NEW: handlers for Create Folder modal
+  const handleCreateFolderClick = () => setCreateFolderModalOpen(true);
+  const handleCreateFolderClose = () => setCreateFolderModalOpen(false);
+
   // Call reload callback after successful upload
   const handleUploadSuccess = () => {
+    if (typeof onReloadFiles === "function") {
+      onReloadFiles();
+    }
+  };
+
+  // NEW: Call reload callback after successful folder creation
+  const handleCreateFolderSuccess = () => {
     if (typeof onReloadFiles === "function") {
       onReloadFiles();
     }
@@ -34,7 +47,8 @@ export default function MainLayout({
         <ListItem button onClick={handleUploadClick}>
           <ListItemText primary="Upload File" />
         </ListItem>
-        <ListItem button={onCreateFolderClick}>
+        {/* Updated: open CreateFolderModal instead of calling onCreateFolderClick directly */}
+        <ListItem button={handleCreateFolderClick}>
           <ListItemText primary="Create Folder" />
         </ListItem>
       </List>
@@ -101,6 +115,16 @@ export default function MainLayout({
         open={uploadModalOpen}
         onClose={handleUploadClose}
         onUploadSuccess={handleUploadSuccess}
+      />
+
+      {/* NEW: Create Folder Modal */}
+      <CreateFolderModal
+        open={createFolderModalOpen}
+        onClose={handleCreateFolderClose}
+        onCreateSuccess={() => {
+          handleCreateFolderClose();
+          handleCreateFolderSuccess();
+        }}
       />
     </Box>
   );
