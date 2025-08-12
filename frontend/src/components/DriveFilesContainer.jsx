@@ -7,7 +7,7 @@ import PaginationControl from './PaginationControls'; // your reusable paginatio
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-function DriveFilesContainer() {
+function DriveFilesContainer({ reloadFlag }) {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [orderBy, setOrderBy] = useState('modifiedTime');
@@ -50,7 +50,7 @@ function DriveFilesContainer() {
     setPage(0);
     fetchFiles(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowsPerPage, orderBy, order]);
+  }, [rowsPerPage, orderBy, order, reloadFlag]);
 
   // Handle page change: MUI TablePagination calls onPageChange(event, newPage)
   const handlePageChange = (_event, newPage) => {
