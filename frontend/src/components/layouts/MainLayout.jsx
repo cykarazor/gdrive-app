@@ -48,7 +48,7 @@ export default function MainLayout({
           <ListItemText primary="Upload File" />
         </ListItem>
         {/* Updated: open CreateFolderModal instead of calling onCreateFolderClick directly */}
-        <ListItem button={handleCreateFolderClick}>
+        <ListItem button onClick={handleCreateFolderClick}>
           <ListItemText primary="Create Folder" />
         </ListItem>
       </List>

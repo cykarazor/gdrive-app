@@ -9,13 +9,8 @@ function App() {
   // Toggle reloadFlag to refresh DriveFilesContainer
   const triggerReload = () => setReloadFlag((prev) => !prev);
 
-  const handleCreateFolderClick = () => {
-    alert("Create Folder modal would open here (not implemented yet)");
-  };
-
   return (
     <MainLayout
-      onCreateFolderClick={handleCreateFolderClick}
       onReloadFiles={triggerReload}  // Pass reload callback
     >
       <DriveFilesContainer reloadFlag={reloadFlag} /> {/* Pass reload flag */}
