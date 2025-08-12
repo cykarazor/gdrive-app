@@ -2,22 +2,35 @@ import { useState } from "react";
 import { Drawer, List, ListItem, ListItemText, Box } from "@mui/material";
 import Header from "../Header";
 import Footer from "../Footer";
+import UploadModal from "../modals/UploadModal";
 
 const drawerWidth = 240;
-const headerHeight = 64; // adjust if your header height is different
+const headerHeight = 64;
 
-export default function MainLayout({ children, onUploadClick, onCreateFolderClick }) {
+export default function MainLayout({ children, onCreateFolderClick }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+
+  const handleUploadClick = () => setUploadModalOpen(true);
+  const handleUploadClose = () => setUploadModalOpen(false);
+
+  // Pass this callback down to UploadModal to refresh file list
+  const handleUploadSuccess = () => {
+    if (typeof onCreateFolderClick === "function") {
+      // Optionally you can call a reload here or pass a reload prop from App.jsx
+      console.log("Upload succeeded - implement reload here");
+    }
+  };
 
   const drawer = (
     <Box sx={{ width: drawerWidth, pt: `${headerHeight}px` }}>
       <List>
-        <ListItem button onClick={onUploadClick}>
+        <ListItem button onClick={handleUploadClick}>
           <ListItemText primary="Upload File" />
         </ListItem>
-        <ListItem button onClick={onCreateFolderClick}>
+        <ListItem button={onCreateFolderClick}>
           <ListItemText primary="Create Folder" />
         </ListItem>
       </List>
@@ -38,7 +51,7 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
             boxSizing: "border-box",
             position: "fixed",
             height: "100vh",
-            pt: `${headerHeight}px`, // Add padding top here as well
+            pt: `${headerHeight}px`,
           },
         }}
         open
@@ -57,7 +70,7 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
           "& .MuiDrawer-paper": {
             width: drawerWidth,
             boxSizing: "border-box",
-            pt: `${headerHeight}px`, // padding top for mobile drawer
+            pt: `${headerHeight}px`,
           },
         }}
       >
@@ -69,28 +82,22 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
         component="main"
         sx={{
           ml: { sm: `${drawerWidth}px` },
-          mt: `${headerHeight}px`, // space for header
-          pb: '80px', // bottom padding for footer
+          mt: `${headerHeight}px`,
+          pb: "80px",
           minHeight: `calc(100vh - ${headerHeight}px)`,
-          boxSizing: 'border-box',
+          boxSizing: "border-box",
         }}
       >
         {children}
       </Box>
 
-      {/* Footer fixed at bottom, full width */}
-      <Box
-        component="footer"
-        sx={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          width: "100%",
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-        }}
-      >
-        <Footer />
-      </Box>
+      <Footer />
+
+      <UploadModal
+        open={uploadModalOpen}
+        onClose={handleUploadClose}
+        onUploadSuccess={handleUploadSuccess}
+      />
     </Box>
   );
 }
