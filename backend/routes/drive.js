@@ -57,19 +57,29 @@ module.exports = function (auth) {
 }
   });
 
-  // ✅ New route to list files
-  router.get('/list', async (req, res) => {
-    try {
-      const response = await drive.files.list({
-        pageSize: 10,
-        fields: 'files(id, name, mimeType, modifiedTime, size)',
-        orderBy: 'modifiedTime desc',
-      });
+  // ✅ New route to list files with pagination support
+router.get('/list', async (req, res) => {
+  try {
+    // NEW: Get pagination params from query
+    const pageSize = parseInt(req.query.pageSize, 10) || 10; // NEW
+    const pageToken = req.query.pageToken || null; // NEW
 
-      res.status(200).json({ files: response.data.files });
-    } catch (error) {
-      console.error('❌ Error listing files:', error.message);
-      if (
+    const response = await drive.files.list({
+      // pageSize: 10, // ❌ OLD: hardcoded limit
+      pageSize, // ✅ NEW: use dynamic limit
+      pageToken, // ✅ NEW: support next page
+      fields: 'nextPageToken, files(id, name, mimeType, modifiedTime, size)', // ✅ NEW: include nextPageToken
+      orderBy: 'modifiedTime desc',
+    });
+
+    // NEW: Return pagination info to frontend
+    res.status(200).json({
+      files: response.data.files,
+      nextPageToken: response.data.nextPageToken || null, // NEW
+    });
+  } catch (error) {
+    console.error('❌ Error listing files:', error.message);
+    if (
       error.code === 401 ||
       (error.errors && error.errors[0].reason === 'authError') ||
       error.message.includes('invalid_grant') ||
@@ -81,9 +91,9 @@ module.exports = function (auth) {
         authUrl: '/auth/google'  // 👈 optional helper
       });
     }
-      res.status(500).json({ message: 'Failed to list files' });
-    }
-  });
+    res.status(500).json({ message: 'Failed to list files' });
+  }
+});
 
   return router;
 };
