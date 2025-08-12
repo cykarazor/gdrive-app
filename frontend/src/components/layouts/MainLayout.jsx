@@ -27,48 +27,50 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Header onMenuClick={handleDrawerToggle} />
 
-      {/* Body section with sidebar + main content */}
-      <Box sx={{ display: "flex", flex: 1, mt: 8 }}>
-        {/* Desktop Drawer */}
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: "none", sm: "block" },
-            "& .MuiDrawer-paper": { width: drawerWidth, boxSizing: "border-box" },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
+      {/* Permanent drawer fixed on desktop */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: "none", sm: "block" },
+          "& .MuiDrawer-paper": {
+            width: drawerWidth,
+            boxSizing: "border-box",
+            position: "fixed",
+            height: "100vh",
+          },
+        }}
+        open
+      >
+        {drawer}
+      </Drawer>
 
-        {/* Mobile Drawer */}
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: "block", sm: "none" },
-            "& .MuiDrawer-paper": { width: drawerWidth, boxSizing: "border-box" },
-          }}
-        >
-          {drawer}
-        </Drawer>
+      {/* Temporary drawer for mobile */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: "block", sm: "none" },
+          "& .MuiDrawer-paper": { width: drawerWidth, boxSizing: "border-box" },
+        }}
+      >
+        {drawer}
+      </Drawer>
 
-        {/* Main Content */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            width: { sm: `calc(100% - ${drawerWidth}px)` },
-          }}
-        >
-          {children}
-        </Box>
+      {/* Main content shifted right on desktop to avoid being behind the fixed drawer */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          ml: { sm: `${drawerWidth}px` },
+          mt: 8, // space below fixed header (adjust if needed)
+        }}
+      >
+        {children}
       </Box>
 
-      {/* Footer */}
       <Footer />
     </Box>
   );
