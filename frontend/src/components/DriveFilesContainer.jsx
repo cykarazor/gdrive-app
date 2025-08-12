@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 import DriveFilesList from './DriveFilesList';
-import PaginationControl from './PaginationControl'; // your reusable pagination
+import PaginationControl from './PaginationControls'; // your reusable pagination
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
