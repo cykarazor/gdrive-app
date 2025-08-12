@@ -24,7 +24,7 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
   );
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <Box sx={{ minHeight: "100vh", position: "relative" }}>
       <Header onMenuClick={handleDrawerToggle} />
 
       {/* Permanent drawer fixed on desktop */}
@@ -58,20 +58,33 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
         {drawer}
       </Drawer>
 
-      {/* Main content shifted right on desktop to avoid being behind the fixed drawer */}
+      {/* Main content shifted right on desktop */}
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
-          p: 3,
           ml: { sm: `${drawerWidth}px` },
-          mt: 8, // space below fixed header (adjust if needed)
+          mt: 8, // space for header
+          pb: '80px', // add bottom padding so content not hidden under footer
+          minHeight: 'calc(100vh - 64px)', // total height minus header height
+          boxSizing: 'border-box',
         }}
       >
         {children}
       </Box>
 
-      <Footer />
+      {/* Footer fixed at bottom, full width */}
+      <Box
+        component="footer"
+        sx={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          width: "100%",
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
+        <Footer />
+      </Box>
     </Box>
   );
 }
