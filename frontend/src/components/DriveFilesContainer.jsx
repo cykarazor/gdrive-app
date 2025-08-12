@@ -1,9 +1,9 @@
 // frontend/src/components/DriveFilesContainer.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 
 import DriveFilesList from './DriveFilesList';
-import PaginationControl from './PaginationControls'; // your reusable pagination
+import PaginationControl from './PaginationControls';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -13,31 +13,25 @@ function DriveFilesContainer() {
   const [orderBy, setOrderBy] = useState('modifiedTime');
   const [order, setOrder] = useState('desc');
 
-  // Pagination state
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(0);
 
-  // Drive API pagination token
-  //const [pageToken, setPageToken] = useState(null);
   const [nextPageToken, setNextPageToken] = useState(null);
 
-  // Fetch files from backend with pagination & sorting
-  const fetchFiles = async (token = null) => {
+  // Wrap fetchFiles with useCallback so it is stable and can be a dependency
+  const fetchFiles = useCallback(async (token = null) => {
     setLoading(true);
     try {
       const params = {
         pageSize: rowsPerPage,
         pageToken: token,
-        orderBy: `${orderBy} ${order}`, // NOTE: Your backend may ignore this, but included for clarity
+        orderBy: `${orderBy} ${order}`,
       };
-
-      // Remove null pageToken param
       if (!token) delete params.pageToken;
 
       const res = await axios.get(`${API_BASE_URL}/api/drive/list`, { params });
       setFiles(res.data.files);
       setNextPageToken(res.data.nextPageToken || null);
-      //setPageToken(token);
     } catch (err) {
       console.error('Failed to fetch files:', err);
       setFiles([]);
@@ -45,24 +39,19 @@ function DriveFilesContainer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [rowsPerPage, orderBy, order]); // <- dependencies
 
-  // Load first page on mount or when rowsPerPage/order changes
+  // Now include fetchFiles in the dependency array
   useEffect(() => {
     setPage(0);
     fetchFiles(null);
-  }, [rowsPerPage, orderBy, order]);
+  }, [fetchFiles]);
 
-  // Handle page change: we only support next and previous page via tokens
   const handlePageChange = (newPage) => {
     if (newPage > page && nextPageToken) {
-      // Going forward, fetch next page using nextPageToken
       fetchFiles(nextPageToken);
       setPage(newPage);
     } else if (newPage < page) {
-      // Going backward: Google Drive API does not provide prev page tokens,
-      // So you need to implement your own cache or reset to page 0
-      // For simplicity, reset to first page on backward navigation
       fetchFiles(null);
       setPage(0);
     }
@@ -91,7 +80,7 @@ function DriveFilesContainer() {
         onSortChange={handleSortChange}
       />
       <PaginationControl
-        count={-1} // Google Drive API doesn't provide total count, so show unknown total
+        count={-1}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handlePageChange}
