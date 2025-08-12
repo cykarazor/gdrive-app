@@ -23,6 +23,10 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
     </Box>
   );
 
+  console.log('onUploadClick:', onUploadClick);
+  console.log('onCreateFolderClick:', onCreateFolderClick);
+
+
   return (
     <Box sx={{ minHeight: "100vh", position: "relative" }}>
       <Header onMenuClick={handleDrawerToggle} />
