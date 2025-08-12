@@ -1,5 +1,5 @@
-// frontend/src/components/Header.jsx
-import { AppBar, Toolbar, Typography, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box, IconButton } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 
 // Google Drive SVG
 const GoogleDriveLogo = () => (
@@ -11,10 +11,28 @@ const GoogleDriveLogo = () => (
   </svg>
 );
 
-const Header = () => {
+const Header = ({ onMenuClick }) => {
   return (
-    <AppBar position="static" sx={{ backgroundColor: '#ffffff', color: '#202124', boxShadow: '0px 1px 5px rgba(0,0,0,0.1)' }}>
+    <AppBar
+      position="fixed"
+      sx={{
+        backgroundColor: '#ffffff',
+        color: '#202124',
+        boxShadow: '0px 1px 5px rgba(0,0,0,0.1)',
+        zIndex: (theme) => theme.zIndex.drawer + 1, // Ensure it's above the Drawer
+      }}
+    >
       <Toolbar>
+        {/* Mobile Menu Button */}
+        <IconButton
+          color="inherit"
+          edge="start"
+          onClick={onMenuClick}
+          sx={{ mr: 2, display: { sm: 'none' } }}
+        >
+          <MenuIcon />
+        </IconButton>
+
         {/* Logo */}
         <Box sx={{ mr: 1 }}>
           <GoogleDriveLogo />
