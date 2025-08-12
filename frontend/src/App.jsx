@@ -1,14 +1,24 @@
+//frontend/src/App.jsx
+import { useState } from "react";
 import MainLayout from "./components/layouts/MainLayout";
 import DriveFilesContainer from "./components/DriveFilesContainer";
 
 function App() {
+  const [reloadFlag, setReloadFlag] = useState(false);
+
+  // Toggle reloadFlag to refresh DriveFilesContainer
+  const triggerReload = () => setReloadFlag((prev) => !prev);
+
   const handleCreateFolderClick = () => {
     alert("Create Folder modal would open here (not implemented yet)");
   };
 
   return (
-    <MainLayout onCreateFolderClick={handleCreateFolderClick}>
-      <DriveFilesContainer />
+    <MainLayout
+      onCreateFolderClick={handleCreateFolderClick}
+      onReloadFiles={triggerReload}  // Pass reload callback
+    >
+      <DriveFilesContainer reloadFlag={reloadFlag} /> {/* Pass reload flag */}
     </MainLayout>
   );
 }

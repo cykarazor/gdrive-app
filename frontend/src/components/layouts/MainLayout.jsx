@@ -1,3 +1,4 @@
+//frontend/src/components/layouts/MainLayout.jsx
 import { useState } from "react";
 import { Drawer, List, ListItem, ListItemText, Box } from "@mui/material";
 import Header from "../Header";
@@ -7,7 +8,11 @@ import UploadModal from "../modals/UploadModal";
 const drawerWidth = 240;
 const headerHeight = 64;
 
-export default function MainLayout({ children, onCreateFolderClick }) {
+export default function MainLayout({
+  children,
+  onCreateFolderClick,
+  onReloadFiles,  // new prop
+}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
@@ -16,11 +21,10 @@ export default function MainLayout({ children, onCreateFolderClick }) {
   const handleUploadClick = () => setUploadModalOpen(true);
   const handleUploadClose = () => setUploadModalOpen(false);
 
-  // Pass this callback down to UploadModal to refresh file list
+  // Call reload callback after successful upload
   const handleUploadSuccess = () => {
-    if (typeof onCreateFolderClick === "function") {
-      // Optionally you can call a reload here or pass a reload prop from App.jsx
-      console.log("Upload succeeded - implement reload here");
+    if (typeof onReloadFiles === "function") {
+      onReloadFiles();
     }
   };
 
