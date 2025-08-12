@@ -4,6 +4,7 @@ import Header from "../Header";
 import Footer from "../Footer";
 
 const drawerWidth = 240;
+const headerHeight = 64; // adjust if your header height is different
 
 export default function MainLayout({ children, onUploadClick, onCreateFolderClick }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -11,7 +12,7 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const drawer = (
-    <Box sx={{ width: drawerWidth }}>
+    <Box sx={{ width: drawerWidth, pt: `${headerHeight}px` }}>
       <List>
         <ListItem button onClick={onUploadClick}>
           <ListItemText primary="Upload File" />
@@ -22,10 +23,6 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
       </List>
     </Box>
   );
-
-  console.log('onUploadClick:', onUploadClick);
-  console.log('onCreateFolderClick:', onCreateFolderClick);
-
 
   return (
     <Box sx={{ minHeight: "100vh", position: "relative" }}>
@@ -41,6 +38,7 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
             boxSizing: "border-box",
             position: "fixed",
             height: "100vh",
+            pt: `${headerHeight}px`, // Add padding top here as well
           },
         }}
         open
@@ -56,7 +54,11 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: "block", sm: "none" },
-          "& .MuiDrawer-paper": { width: drawerWidth, boxSizing: "border-box" },
+          "& .MuiDrawer-paper": {
+            width: drawerWidth,
+            boxSizing: "border-box",
+            pt: `${headerHeight}px`, // padding top for mobile drawer
+          },
         }}
       >
         {drawer}
@@ -67,9 +69,9 @@ export default function MainLayout({ children, onUploadClick, onCreateFolderClic
         component="main"
         sx={{
           ml: { sm: `${drawerWidth}px` },
-          mt: 8, // space for header
-          pb: '80px', // add bottom padding so content not hidden under footer
-          minHeight: 'calc(100vh - 64px)', // total height minus header height
+          mt: `${headerHeight}px`, // space for header
+          pb: '80px', // bottom padding for footer
+          minHeight: `calc(100vh - ${headerHeight}px)`,
           boxSizing: 'border-box',
         }}
       >
