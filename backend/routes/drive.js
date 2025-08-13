@@ -96,7 +96,7 @@ router.get('/list', async (req, res) => {
 });
 
 
-// Create folder route
+// Create folder route finalized
 router.post('/create-folder', async (req, res) => {
   try {
     const { name } = req.body;
