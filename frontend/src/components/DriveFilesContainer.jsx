@@ -1,7 +1,7 @@
 // frontend/src/components/DriveFilesContainer.jsx
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { Button, Box, Breadcrumbs, Typography, Link } from '@mui/material';
+import { Button, Box, Breadcrumbs, Link } from '@mui/material';
 import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
 
