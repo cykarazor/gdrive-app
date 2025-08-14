@@ -1,19 +1,40 @@
 //backend/routes/drive.js
 const fs = require('fs');
 const path = require('path');
-const { google } = require('googleapis');
+const express = require('express');
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: path.join(__dirname, '..', 'uploads') });
+
+const createDriveService = require('../services/googleDriveService');
 
 module.exports = function (auth) {
-  const router = require('express').Router();
-  const drive = google.drive({ version: 'v3', auth });
+  const router = express.Router();
+  const driveSvc = createDriveService(auth);
+
+  // Helper to detect auth errors
+  const isAuthError = (err) =>
+    err?.code === 401 ||
+    err?.status === 401 ||
+    err?.message?.includes('invalid_grant') ||
+    err?.message?.toLowerCase?.().includes('token') ||
+    (Array.isArray(err?.errors) && err.errors[0]?.reason === 'authError');
+
+  const authErrorPayload = {
+    error: 'TokenExpired',
+    message: 'Your Google Drive token has expired. Please reauthorize.',
+    authUrl: '/auth/google',
+  };
 
   // Simple test connection route
   router.get('/test', async (req, res) => {
     try {
-      const response = await drive.files.list({ pageSize: 1 });
-      res.json(response.data);
+      // ❌ Original code commented out
+      // const response = await drive.files.list({ pageSize: 1 });
+      // res.json(response.data);
+
+      // ✅ NEW: use service
+      const { files } = await driveSvc.listFiles({ pageSize: 1 });
+      res.json({ ok: true, sample: files[0] || null });
     } catch (err) {
       console.error(err);
       res.status(500).send('Drive API test failed');
@@ -22,123 +43,140 @@ module.exports = function (auth) {
 
   // Upload route
   router.post('/upload', upload.single('file'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ message: 'file is required' });
+
+    const tempPath = req.file.path;
+
     try {
-      const fileMetadata = { name: req.file.originalname };
-      const media = {
+      // ✅ NEW: allow folderId
+      const folderId = req.body.folderId || 'root';
+      const data = await driveSvc.uploadFile({
+        tempPath,
+        originalName: req.file.originalname,
         mimeType: req.file.mimetype,
-        body: fs.createReadStream(req.file.path),
-      };
-
-      const file = await drive.files.create({
-        resource: fileMetadata,
-        media: media,
-        fields: 'id, name',
+        folderId,
       });
-
-      fs.unlinkSync(req.file.path);
-      res.json({ fileId: file.data.id, fileName: file.data.name });
+      res.json({
+        id: data.id,
+        name: data.name,
+        webViewLink: data.webViewLink,
+        parents: data.parents,
+      });
     } catch (err) {
-  console.error('Upload failed:', err);
-
-  if (
-    err.code === 401 ||
-    (err.errors && err.errors[0].reason === 'authError') ||
-    err.message.includes('invalid_grant') ||
-    err.message.includes('token')
-  ) {
-    return res.status(401).json({
-      error: 'TokenExpired',
-      message: 'Your Google Drive token has expired. Click here to reauthorize.',
-      authUrl: '/auth/google'  // 👈 optional helper
-    });
-  }
-
-  res.status(500).send('Upload failed due to server error');
-}
+      console.error('Upload failed:', err);
+      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
+      res.status(500).json({ message: 'Upload failed' });
+    } finally {
+      try { fs.unlinkSync(tempPath); } catch {}
+    }
   });
 
-  // ✅ New route to list files with pagination support
-router.get('/list', async (req, res) => {
-  try {
-    // NEW: Get pagination params from query
-    const pageSize = parseInt(req.query.pageSize, 10) || 10; // NEW
-    const pageToken = req.query.pageToken || null; // NEW
-
-    const response = await drive.files.list({
-      // pageSize: 10, // ❌ OLD: hardcoded limit
-      pageSize, // ✅ NEW: use dynamic limit
-      pageToken, // ✅ NEW: support next page
-      fields: 'nextPageToken, files(id, name, mimeType, modifiedTime, size)', // ✅ NEW: include nextPageToken
-      orderBy: 'modifiedTime desc',
-    });
-
-    // NEW: Return pagination info to frontend
-    res.status(200).json({
-      files: response.data.files,
-      nextPageToken: response.data.nextPageToken || null, // NEW
-    });
-  } catch (error) {
-    console.error('❌ Error listing files:', error.message);
-    if (
-      error.code === 401 ||
-      (error.errors && error.errors[0].reason === 'authError') ||
-      error.message.includes('invalid_grant') ||
-      error.message.includes('token')
-    ) {
-      return res.status(401).json({
-        error: 'TokenExpired',
-        message: 'Your Google Drive token has expired. Click here to reauthorize.',
-        authUrl: '/auth/google'  // 👈 optional helper
+  // ✅ NEW route: List files (root or inside folder)
+  router.get('/files', async (req, res) => {
+    try {
+      const { folderId = 'root', pageSize = 10, pageToken = null, orderBy } = req.query;
+      const data = await driveSvc.listFiles({
+        folderId,
+        pageSize: parseInt(pageSize, 10) || 10,
+        pageToken: pageToken || null,
+        orderBy: orderBy || 'folder,name,modifiedTime desc',
       });
+      res.json(data);
+    } catch (err) {
+      console.error('List failed:', err);
+      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
+      res.status(500).json({ message: 'Failed to list files' });
     }
-    res.status(500).json({ message: 'Failed to list files' });
-  }
-});
+  });
 
+  // ✅ NEW route: Create folder (supports parentId)
+  router.post('/folder', async (req, res) => {
+    try {
+      const { name, parentId = 'root' } = req.body || {};
+      if (!name || !name.trim()) return res.status(400).json({ message: 'Folder name is required' });
 
-// Create folder route finalized
-router.post('/create-folder', async (req, res) => {
-  try {
-    const { name } = req.body;
-
-    if (!name || !name.trim()) {
-      return res.status(400).json({ message: 'Folder name is required' });
+      const data = await driveSvc.createFolder({ name, parentId });
+      res.json({ id: data.id, name: data.name, parents: data.parents });
+    } catch (err) {
+      console.error('Create folder failed:', err);
+      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
+      res.status(500).json({ message: 'Failed to create folder' });
     }
+  });
 
-    // Folder metadata
-    const fileMetadata = {
-      name: name.trim(),
-      mimeType: 'application/vnd.google-apps.folder',
-    };
+  // ✅ NEW: Delete file/folder
+  router.delete('/file/:id', async (req, res) => {
+    try {
+      await driveSvc.deleteFile(req.params.id);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Delete failed:', err);
+      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
+      res.status(500).json({ message: 'Failed to delete file' });
+    }
+  });
 
-    const folder = await drive.files.create({
-      resource: fileMetadata,
-      fields: 'id, name',
-    });
+  // ✅ NEW: Move file/folder
+  router.patch('/file/:id/move', async (req, res) => {
+    try {
+      const { newParentId } = req.body || {};
+      if (!newParentId) return res.status(400).json({ message: 'newParentId is required' });
 
-    res.status(200).json({
-      folderId: folder.data.id,
-      folderName: folder.data.name,
-    });
-  } catch (err) {
-    console.error('Create folder failed:', err);
+      const data = await driveSvc.moveFile({ fileId: req.params.id, newParentId });
+      res.json({ id: data.id, parents: data.parents });
+    } catch (err) {
+      console.error('Move failed:', err);
+      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
+      res.status(500).json({ message: 'Failed to move file' });
+    }
+  });
 
-    if (
-      err.code === 401 ||
-      (err.errors && err.errors[0].reason === 'authError') ||
-      err.message.includes('invalid_grant') ||
-      err.message.includes('token')
-    ) {
-      return res.status(401).json({
-        error: 'TokenExpired',
-        message: 'Your Google Drive token has expired. Click here to reauthorize.',
-        authUrl: '/auth/google',
+  // ✅ NEW: Get file metadata
+  router.get('/file/:id', async (req, res) => {
+    try {
+      const data = await driveSvc.getFileMetadata(req.params.id);
+      res.json(data);
+    } catch (err) {
+      console.error('Get metadata failed:', err);
+      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
+      res.status(500).json({ message: 'Failed to get file metadata' });
+    }
+  });
+
+  // ✅ NEW: Download file
+  router.get('/file/:id/download', async (req, res) => {
+    try {
+      const meta = await driveSvc.getFileMetadata(req.params.id);
+      const stream = await driveSvc.downloadFile({ fileId: req.params.id });
+
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(meta.name)}"`);
+      if (meta.mimeType) res.setHeader('Content-Type', meta.mimeType);
+
+      stream.on('error', (e) => {
+        console.error('Download stream error:', e);
+        if (!res.headersSent) res.status(500).end('Download error');
       });
-    }
 
-    res.status(500).json({ message: 'Failed to create folder due to server error' });
-  }
-});
+      stream.pipe(res);
+    } catch (err) {
+      console.error('Download failed:', err);
+      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
+      res.status(500).json({ message: 'Failed to download file' });
+    }
+  });
+
+  // ✅ NEW: Keep backward-compatible aliases for existing frontend
+  // GET /api/drive/list -> /api/drive/files
+  router.get('/list', async (req, res) => {
+    req.url = req.url.replace('/list', '/files');
+    return router.handle(req, res);
+  });
+
+  // POST /api/drive/create-folder -> /api/drive/folder
+  router.post('/create-folder', async (req, res) => {
+    req.url = req.url.replace('/create-folder', '/folder');
+    return router.handle(req, res);
+  });
 
   return router;
 };
