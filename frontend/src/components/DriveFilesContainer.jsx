@@ -1,10 +1,9 @@
 // frontend/src/components/DriveFilesContainer.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { Button, Box } from '@mui/material';
 
 import DriveFilesList from './DriveFilesList';
-import PaginationControl from './PaginationControls';
+import PaginationControl from './PaginationControls'; // your reusable pagination
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -14,22 +13,23 @@ function DriveFilesContainer({ reloadFlag }) {
   const [orderBy, setOrderBy] = useState('modifiedTime');
   const [order, setOrder] = useState('desc');
 
+  // Pagination state
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(0);
 
+  // Drive API pagination token
   const [nextPageToken, setNextPageToken] = useState(null);
-  const [pageTokens, setPageTokens] = useState(['']); 
 
-  const [currentFolderId, setCurrentFolderId] = useState('root');
-  const [parentFolderId, setParentFolderId] = useState(null); // ✅ track parent
+  // ✅ Array to store tokens for each page to enable backward navigation
+  const [pageTokens, setPageTokens] = useState(['']); // first page token is empty
 
-  const fetchFiles = async (token = null, folderId = currentFolderId) => {
+  // ✅ Wrap fetchFiles in useCallback
+  const fetchFiles = useCallback(async (token = null) => {
     setLoading(true);
     try {
       const params = {
         pageSize: rowsPerPage,
         pageToken: token,
-        folderId,
         orderBy: `${orderBy} ${order}`,
       };
       if (!token) delete params.pageToken;
@@ -37,40 +37,36 @@ function DriveFilesContainer({ reloadFlag }) {
       const res = await axios.get(`${API_BASE_URL}/api/drive/list`, { params });
       setFiles(res.data.files);
       setNextPageToken(res.data.nextPageToken || null);
-
-      // ✅ Set parent folder ID
-      if (folderId !== 'root') {
-        const folderMeta = await axios.get(`${API_BASE_URL}/api/drive/file/${folderId}`);
-        setParentFolderId(folderMeta.data.parents?.[0] || 'root');
-      } else {
-        setParentFolderId(null);
-      }
     } catch (err) {
       console.error('Failed to fetch files:', err);
       setFiles([]);
       setNextPageToken(null);
-      setParentFolderId(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [rowsPerPage, orderBy, order]);
 
+  // Load first page on mount or when rowsPerPage/order changes
   useEffect(() => {
     setPage(0);
-    setPageTokens(['']);
-    fetchFiles(null, currentFolderId);
-  }, [rowsPerPage, orderBy, order, reloadFlag, currentFolderId]);
+    setPageTokens(['']); // reset tokens
+    fetchFiles(null);
+  }, [fetchFiles, reloadFlag]);
 
+  // Handle page change
   const handlePageChange = (_event, newPage) => {
     if (newPage > page) {
       if (nextPageToken) {
         fetchFiles(nextPageToken);
         setPage(newPage);
+
+        // Store token for this new page
         const newTokens = [...pageTokens];
         newTokens[newPage] = nextPageToken;
         setPageTokens(newTokens);
       }
     } else if (newPage < page) {
+      // Going backward: fetch token stored for that page
       const prevToken = pageTokens[newPage];
       fetchFiles(prevToken || null);
       setPage(newPage);
@@ -92,42 +88,17 @@ function DriveFilesContainer({ reloadFlag }) {
     }
   };
 
-  const handleFolderClick = (folderId) => {
-    setCurrentFolderId(folderId);
-    setPage(0);
-    setPageTokens(['']);
-  };
-
-  // ✅ NEW: handle back navigation
-  const handleBackClick = () => {
-    if (parentFolderId) {
-      setCurrentFolderId(parentFolderId);
-      setPage(0);
-      setPageTokens(['']);
-    }
-  };
-
   return (
     <>
-      <Box sx={{ mb: 1 }}>
-        {parentFolderId && (
-          <Button variant="outlined" onClick={handleBackClick}>
-            Back
-          </Button>
-        )}
-      </Box>
-
       <DriveFilesList
         files={files}
         loading={loading}
         orderBy={orderBy}
         order={order}
         onSortChange={handleSortChange}
-        onFolderClick={handleFolderClick}
       />
-
       <PaginationControl
-        count={-1}
+        count={-1} // Unknown total count
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handlePageChange}
