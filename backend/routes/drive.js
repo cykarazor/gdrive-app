@@ -1,4 +1,4 @@
-//backend/routes/drive.js
+// backend/routes/drive.js
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -166,16 +166,29 @@ module.exports = function (auth) {
   });
 
   // ✅ NEW: Keep backward-compatible aliases for existing frontend
+  // ❌ OLD problematic code (commented out):
+  // router.get('/list', async (req, res) => {
+  //   req.url = req.url.replace('/list', '/files');
+  //   return router.handle(req, res);
+  // });
+  // router.post('/create-folder', async (req, res) => {
+  //   req.url = req.url.replace('/create-folder', '/folder');
+  //   return router.handle(req, res);
+  // });
+
+  // ✅ FIXED: Use redirect / next instead
   // GET /api/drive/list -> /api/drive/files
-  router.get('/list', async (req, res) => {
-    req.url = req.url.replace('/list', '/files');
-    return router.handle(req, res);
+  router.get('/list', (req, res) => {
+    // Redirect to /files with same query params
+    const query = req.url.includes('?') ? req.url.split('?')[1] : '';
+    res.redirect(`/api/drive/files${query ? '?' + query : ''}`);
   });
 
   // POST /api/drive/create-folder -> /api/drive/folder
-  router.post('/create-folder', async (req, res) => {
-    req.url = req.url.replace('/create-folder', '/folder');
-    return router.handle(req, res);
+  router.post('/create-folder', (req, res, next) => {
+    // Forward the request internally
+    req.url = '/folder';
+    next(); // pass to /folder route
   });
 
   return router;
