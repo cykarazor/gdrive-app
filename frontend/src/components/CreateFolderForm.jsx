@@ -5,7 +5,7 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-export default function CreateFolderForm({ onSuccess, disabled }) {
+export default function CreateFolderForm({ onSuccess, disabled, folderId }) { // ✅ accept folderId prop
   const [folderName, setFolderName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,9 +19,14 @@ export default function CreateFolderForm({ onSuccess, disabled }) {
     setError('');
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/drive/folder`, {
+      const payload = {
         name: folderName.trim(),
-      });
+        // parentId will default to root if folderId not provided
+        parentId: folderId || 'root', // ✅ send folderId to backend
+      };
+
+      // const res = await axios.post(`${API_BASE_URL}/api/drive/folder`, { name: folderName.trim() }); // <-- old code
+      const res = await axios.post(`${API_BASE_URL}/api/drive/folder`, payload); // ✅ new code with parentId
 
       if (res.status === 200) {
         setFolderName('');
@@ -29,7 +34,8 @@ export default function CreateFolderForm({ onSuccess, disabled }) {
       } else {
         setError('Failed to create folder');
       }
-    } catch {
+    } catch (err) {
+      console.error('Create folder error:', err); // ✅ log error for debugging
       setError('Failed to create folder. Please try again.');
     } finally {
       setLoading(false);

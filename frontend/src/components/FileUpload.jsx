@@ -6,7 +6,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import GoogleIcon from '@mui/icons-material/Google';
 import UploadLoading from './UploadLoading'; // NEW: Import the loading spinner component
 
-const FileUpload = ({ onUploadSuccess }) => {
+const FileUpload = ({ onUploadSuccess, folderId }) => { // ✅ accept folderId prop
   const [file, setFile] = useState(null);
   const fileInputRef = useRef(null); // NEW: ref for file input element
   const [uploadResult, setUploadResult] = useState(null);
@@ -30,11 +30,16 @@ const FileUpload = ({ onUploadSuccess }) => {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('folderId', folderId || 'root'); // ✅ send folderId to backend, default to root
 
     const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
 
     try {
-      const res = await axios.post(`${apiBaseUrl}/api/drive/upload`, formData);
+      // const res = await axios.post(`${apiBaseUrl}/api/drive/upload`, formData); // <-- old code
+      const res = await axios.post(`${apiBaseUrl}/api/drive/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }); // ✅ new code to include folderId in formData
+
       setUploadResult(res.data);
       setError('');
       setAuthExpired(false);
