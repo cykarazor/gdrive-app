@@ -108,17 +108,19 @@ function DriveFilesList({
                       {file.mimeType === 'application/vnd.google-apps.folder' ? (
                         <Typography
                           sx={{ cursor: 'pointer', color: 'primary.main' }}
-                          onClick={() => onFolderClick?.(file.id)}
+                          onClick={() => onFolderClick?.(file.id, file.name)}
                         >
                           {file.name}
                         </Typography>
                       ) : (
-                        file.name
+                        <Typography>{file.name}</Typography>
                       )}
                     </Box>
                   </TableCell>
                   <TableCell>{formatFileSize(file.size)}</TableCell>
-                  <TableCell>{new Date(file.modifiedTime).toLocaleString()}</TableCell>
+                  <TableCell>
+                    {file.modifiedTime ? new Date(file.modifiedTime).toLocaleString() : '-'}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

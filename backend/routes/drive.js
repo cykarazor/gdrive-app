@@ -28,11 +28,6 @@ module.exports = function (auth) {
   // Simple test connection route
   router.get('/test', async (req, res) => {
     try {
-      // ❌ Original code commented out
-      // const response = await drive.files.list({ pageSize: 1 });
-      // res.json(response.data);
-
-      // ✅ NEW: use service
       const { files } = await driveSvc.listFiles({ pageSize: 1 });
       res.json({ ok: true, sample: files[0] || null });
     } catch (err) {
@@ -48,7 +43,6 @@ module.exports = function (auth) {
     const tempPath = req.file.path;
 
     try {
-      // ✅ NEW: allow folderId
       const folderId = req.body.folderId || 'root';
       const data = await driveSvc.uploadFile({
         tempPath,
@@ -71,7 +65,7 @@ module.exports = function (auth) {
     }
   });
 
-  // ✅ NEW route: List files (root or inside folder)
+  // List files route
   router.get('/files', async (req, res) => {
     try {
       const { folderId = 'root', pageSize = 10, pageToken = null, orderBy } = req.query;
@@ -89,7 +83,7 @@ module.exports = function (auth) {
     }
   });
 
-  // ✅ NEW route: Create folder (supports parentId)
+  // Create folder route
   router.post('/folder', async (req, res) => {
     try {
       const { name, parentId = 'root' } = req.body || {};
@@ -104,7 +98,7 @@ module.exports = function (auth) {
     }
   });
 
-  // ✅ NEW: Delete file/folder
+  // Delete file/folder
   router.delete('/file/:id', async (req, res) => {
     try {
       await driveSvc.deleteFile(req.params.id);
@@ -116,7 +110,7 @@ module.exports = function (auth) {
     }
   });
 
-  // ✅ NEW: Move file/folder
+  // Move file/folder
   router.patch('/file/:id/move', async (req, res) => {
     try {
       const { newParentId } = req.body || {};
@@ -131,7 +125,7 @@ module.exports = function (auth) {
     }
   });
 
-  // ✅ NEW: Get file metadata
+  // Get file metadata
   router.get('/file/:id', async (req, res) => {
     try {
       const data = await driveSvc.getFileMetadata(req.params.id);
@@ -143,7 +137,7 @@ module.exports = function (auth) {
     }
   });
 
-  // ✅ NEW: Download file
+  // Download file
   router.get('/file/:id/download', async (req, res) => {
     try {
       const meta = await driveSvc.getFileMetadata(req.params.id);
@@ -165,30 +159,20 @@ module.exports = function (auth) {
     }
   });
 
-  // ✅ NEW: Keep backward-compatible aliases for existing frontend
-  // ❌ OLD problematic code (commented out):
-  // router.get('/list', async (req, res) => {
-  //   req.url = req.url.replace('/list', '/files');
-  //   return router.handle(req, res);
-  // });
-  // router.post('/create-folder', async (req, res) => {
-  //   req.url = req.url.replace('/create-folder', '/folder');
-  //   return router.handle(req, res);
-  // });
+  // ==========================
+  // Backward-compatible aliases
+  // ==========================
 
-  // ✅ FIXED: Use redirect / next instead
   // GET /api/drive/list -> /api/drive/files
   router.get('/list', (req, res) => {
-    // Redirect to /files with same query params
-    const query = req.url.includes('?') ? req.url.split('?')[1] : '';
+    const query = req.originalUrl.split('?')[1]; // only query string
     res.redirect(`/api/drive/files${query ? '?' + query : ''}`);
   });
 
   // POST /api/drive/create-folder -> /api/drive/folder
   router.post('/create-folder', (req, res, next) => {
-    // Forward the request internally
-    req.url = '/folder';
-    next(); // pass to /folder route
+    req.url = '/folder'; // relative path only
+    next();
   });
 
   return router;

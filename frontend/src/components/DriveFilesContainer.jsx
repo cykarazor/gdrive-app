@@ -34,8 +34,13 @@ function DriveFilesContainer({ reloadFlag }) {
       };
       if (!token) delete params.pageToken;
 
-      const res = await axios.get(`${API_BASE_URL}/api/drive/list`, { params });
-      setFiles(res.data.files);
+      // ✅ Updated endpoint to /files
+      const res = await axios.get(`${API_BASE_URL}/api/drive/files`, {
+        params,
+        withCredentials: false, // optional: ensures no cookies sent
+      });
+
+      setFiles(res.data.files || []); // safe fallback
       setNextPageToken(res.data.nextPageToken || null);
     } catch (err) {
       console.error('Failed to fetch files:', err);
@@ -44,7 +49,7 @@ function DriveFilesContainer({ reloadFlag }) {
     } finally {
       setLoading(false);
     }
-  }, [rowsPerPage, orderBy, order]);
+  }, [rowsPerPage, orderBy, order, API_BASE_URL]);
 
   // Load first page on mount or when rowsPerPage/order changes
   useEffect(() => {
