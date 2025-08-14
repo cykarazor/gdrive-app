@@ -48,6 +48,7 @@ function DriveFilesList({
   orderBy,
   order,
   onSortChange,
+  onFolderClick, // NEW
 }) {
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden', p: 2 }}>
@@ -104,7 +105,16 @@ function DriveFilesList({
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {mimeTypeIcons[file.mimeType] || <InsertDriveFileIcon />}
-                      {file.name}
+                      {file.mimeType === 'application/vnd.google-apps.folder' ? (
+                        <Typography
+                          sx={{ cursor: 'pointer', color: 'primary.main' }}
+                          onClick={() => onFolderClick?.(file.id)}
+                        >
+                          {file.name}
+                        </Typography>
+                      ) : (
+                        file.name
+                      )}
                     </Box>
                   </TableCell>
                   <TableCell>{formatFileSize(file.size)}</TableCell>
