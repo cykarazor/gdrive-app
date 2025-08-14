@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 
 import DriveFilesList from './DriveFilesList';
-import PaginationControl from './PaginationControls'; // your reusable pagination
+import PaginationControl from './PaginationControls';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -19,59 +19,51 @@ function DriveFilesContainer({ reloadFlag }) {
 
   // Drive API pagination token
   const [nextPageToken, setNextPageToken] = useState(null);
-
-  // ✅ Array to store tokens for each page to enable backward navigation
   const [pageTokens, setPageTokens] = useState(['']); // first page token is empty
 
-  // ✅ Wrap fetchFiles in useCallback
-  const fetchFiles = useCallback(async (token = null) => {
-    setLoading(true);
-    try {
-      const params = {
-        pageSize: rowsPerPage,
-        pageToken: token,
-        orderBy: `${orderBy} ${order}`,
-      };
-      if (!token) delete params.pageToken;
+  // Fetch files from backend
+  const fetchFiles = useCallback(
+    async (token = null) => {
+      setLoading(true);
+      try {
+        const params = {
+          pageSize: rowsPerPage,
+          orderBy: `${orderBy} ${order}`,
+        };
+        if (token) params.pageToken = token;
 
-      // ✅ Updated endpoint to /files
-      const res = await axios.get(`${API_BASE_URL}/api/drive/files`, {
-        params,
-        withCredentials: false, // optional: ensures no cookies sent
-      });
+        const res = await axios.get(`${API_BASE_URL}/api/drive/files`, { params });
+        setFiles(res.data.files || []);
+        setNextPageToken(res.data.nextPageToken || null);
+      } catch (err) {
+        console.error('Failed to fetch files:', err);
+        setFiles([]);
+        setNextPageToken(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [rowsPerPage, orderBy, order] // API_BASE_URL intentionally omitted
+  );
 
-      setFiles(res.data.files || []); // safe fallback
-      setNextPageToken(res.data.nextPageToken || null);
-    } catch (err) {
-      console.error('Failed to fetch files:', err);
-      setFiles([]);
-      setNextPageToken(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [rowsPerPage, orderBy, order, API_BASE_URL]);
-
-  // Load first page on mount or when rowsPerPage/order changes
+  // Load first page on mount or reload
   useEffect(() => {
     setPage(0);
-    setPageTokens(['']); // reset tokens
+    setPageTokens(['']);
     fetchFiles(null);
   }, [fetchFiles, reloadFlag]);
 
-  // Handle page change
+  // Page navigation
   const handlePageChange = (_event, newPage) => {
     if (newPage > page) {
       if (nextPageToken) {
         fetchFiles(nextPageToken);
         setPage(newPage);
-
-        // Store token for this new page
         const newTokens = [...pageTokens];
         newTokens[newPage] = nextPageToken;
         setPageTokens(newTokens);
       }
     } else if (newPage < page) {
-      // Going backward: fetch token stored for that page
       const prevToken = pageTokens[newPage];
       fetchFiles(prevToken || null);
       setPage(newPage);
@@ -79,9 +71,9 @@ function DriveFilesContainer({ reloadFlag }) {
   };
 
   const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    setRowsPerPage(newRowsPerPage);
+    setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+    setPageTokens(['']);
   };
 
   const handleSortChange = (property) => {
@@ -91,6 +83,8 @@ function DriveFilesContainer({ reloadFlag }) {
       setOrderBy(property);
       setOrder('asc');
     }
+    setPage(0);
+    setPageTokens(['']);
   };
 
   return (
@@ -103,7 +97,7 @@ function DriveFilesContainer({ reloadFlag }) {
         onSortChange={handleSortChange}
       />
       <PaginationControl
-        count={-1} // Unknown total count
+        count={-1} // unknown total count
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handlePageChange}
