@@ -1,7 +1,7 @@
 // frontend/src/components/DriveFilesContainer.jsx
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-
+import { Button, Box, Breadcrumbs, Typography, Link } from '@mui/material';
 import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
 
@@ -13,20 +13,16 @@ function DriveFilesContainer({ reloadFlag }) {
   const [orderBy, setOrderBy] = useState('modifiedTime');
   const [order, setOrder] = useState('desc');
 
-  // Pagination state
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(0);
-
-  // Drive API pagination token
   const [nextPageToken, setNextPageToken] = useState(null);
-  const [pageTokens, setPageTokens] = useState(['']); // first page token is empty
+  const [pageTokens, setPageTokens] = useState(['']);
 
-  // Currently opened folder
   const [currentFolderId, setCurrentFolderId] = useState('root');
+  const [folderStack, setFolderStack] = useState([{ id: 'root', name: 'Root' }]); // Root as first breadcrumb
 
-  // Fetch files from backend
   const fetchFiles = useCallback(
-    async (token = null, folderId = currentFolderId) => {
+    async (folderId = 'root', token = null) => {
       setLoading(true);
       try {
         const params = {
@@ -47,29 +43,51 @@ function DriveFilesContainer({ reloadFlag }) {
         setLoading(false);
       }
     },
-    [rowsPerPage, orderBy, order, currentFolderId]
+    [rowsPerPage, orderBy, order]
   );
 
-  // Load first page on mount or reload
   useEffect(() => {
     setPage(0);
     setPageTokens(['']);
-    fetchFiles(null);
+    fetchFiles('root', null);
+    setCurrentFolderId('root');
+    setFolderStack([{ id: 'root', name: 'Root' }]);
   }, [fetchFiles, reloadFlag]);
 
-  // Handle folder click
-  const handleFolderClick = (folderId) => {
+  const handleFolderClick = (folderId, folderName) => {
+    setFolderStack((prev) => [...prev, { id: folderId, name: folderName }]);
     setCurrentFolderId(folderId);
     setPage(0);
     setPageTokens(['']);
-    fetchFiles(null, folderId);
+    fetchFiles(folderId, null);
   };
 
-  // Page navigation
+  const handleBack = () => {
+    if (folderStack.length <= 1) return; // Already at root
+    const prevFolder = folderStack[folderStack.length - 2];
+    setFolderStack((prev) => prev.slice(0, prev.length - 1));
+    setCurrentFolderId(prevFolder.id);
+    setPage(0);
+    setPageTokens(['']);
+    fetchFiles(prevFolder.id, null);
+  };
+
+  // Click on breadcrumb folder
+  const handleBreadcrumbClick = (index) => {
+    if (index === folderStack.length - 1) return; // Current folder, do nothing
+    const newStack = folderStack.slice(0, index + 1);
+    const targetFolder = newStack[newStack.length - 1];
+    setFolderStack(newStack);
+    setCurrentFolderId(targetFolder.id);
+    setPage(0);
+    setPageTokens(['']);
+    fetchFiles(targetFolder.id, null);
+  };
+
   const handlePageChange = (_event, newPage) => {
     if (newPage > page) {
       if (nextPageToken) {
-        fetchFiles(nextPageToken);
+        fetchFiles(currentFolderId, nextPageToken);
         setPage(newPage);
         const newTokens = [...pageTokens];
         newTokens[newPage] = nextPageToken;
@@ -77,7 +95,7 @@ function DriveFilesContainer({ reloadFlag }) {
       }
     } else if (newPage < page) {
       const prevToken = pageTokens[newPage];
-      fetchFiles(prevToken || null);
+      fetchFiles(currentFolderId, prevToken || null);
       setPage(newPage);
     }
   };
@@ -101,14 +119,40 @@ function DriveFilesContainer({ reloadFlag }) {
 
   return (
     <>
+      <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Button
+          variant="contained"
+          disabled={folderStack.length <= 1}
+          onClick={handleBack}
+        >
+          ← Back
+        </Button>
+
+        {/* Breadcrumb navigation */}
+        <Breadcrumbs aria-label="breadcrumb">
+          {folderStack.map((folder, index) => (
+            <Link
+              key={folder.id}
+              underline="hover"
+              color={index === folderStack.length - 1 ? 'text.primary' : 'inherit'}
+              sx={{ cursor: index === folderStack.length - 1 ? 'default' : 'pointer' }}
+              onClick={() => handleBreadcrumbClick(index)}
+            >
+              {folder.name}
+            </Link>
+          ))}
+        </Breadcrumbs>
+      </Box>
+
       <DriveFilesList
         files={files}
         loading={loading}
         orderBy={orderBy}
         order={order}
         onSortChange={handleSortChange}
-        onFolderClick={handleFolderClick} // <-- pass to DriveFilesList
+        onFolderClick={handleFolderClick}
       />
+
       <PaginationControl
         count={-1} // unknown total count
         rowsPerPage={rowsPerPage}
