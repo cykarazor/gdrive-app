@@ -105,10 +105,12 @@ function DriveFilesList({
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {mimeTypeIcons[file.mimeType] || <InsertDriveFileIcon />}
+
                       {file.mimeType === 'application/vnd.google-apps.folder' ? (
+                        // Folder name is clickable to open folder
                         <Typography
                           sx={{ cursor: 'pointer', color: 'primary.main' }}
-                          onClick={() => onFolderClick?.(file.id, file.name)}
+                          onClick={() => onFolderClick?.(file.id, file.name)} // call handler with folderId
                         >
                           {file.name}
                         </Typography>
@@ -117,7 +119,9 @@ function DriveFilesList({
                       )}
                     </Box>
                   </TableCell>
+
                   <TableCell>{formatFileSize(file.size)}</TableCell>
+
                   <TableCell>
                     {file.modifiedTime ? new Date(file.modifiedTime).toLocaleString() : '-'}
                   </TableCell>

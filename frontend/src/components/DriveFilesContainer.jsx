@@ -21,14 +21,18 @@ function DriveFilesContainer({ reloadFlag }) {
   const [nextPageToken, setNextPageToken] = useState(null);
   const [pageTokens, setPageTokens] = useState(['']); // first page token is empty
 
+  // Currently opened folder
+  const [currentFolderId, setCurrentFolderId] = useState('root');
+
   // Fetch files from backend
   const fetchFiles = useCallback(
-    async (token = null) => {
+    async (token = null, folderId = currentFolderId) => {
       setLoading(true);
       try {
         const params = {
           pageSize: rowsPerPage,
           orderBy: `${orderBy} ${order}`,
+          folderId,
         };
         if (token) params.pageToken = token;
 
@@ -43,7 +47,7 @@ function DriveFilesContainer({ reloadFlag }) {
         setLoading(false);
       }
     },
-    [rowsPerPage, orderBy, order] // API_BASE_URL intentionally omitted
+    [rowsPerPage, orderBy, order, currentFolderId]
   );
 
   // Load first page on mount or reload
@@ -52,6 +56,14 @@ function DriveFilesContainer({ reloadFlag }) {
     setPageTokens(['']);
     fetchFiles(null);
   }, [fetchFiles, reloadFlag]);
+
+  // Handle folder click
+  const handleFolderClick = (folderId) => {
+    setCurrentFolderId(folderId);
+    setPage(0);
+    setPageTokens(['']);
+    fetchFiles(null, folderId);
+  };
 
   // Page navigation
   const handlePageChange = (_event, newPage) => {
@@ -95,6 +107,7 @@ function DriveFilesContainer({ reloadFlag }) {
         orderBy={orderBy}
         order={order}
         onSortChange={handleSortChange}
+        onFolderClick={handleFolderClick} // <-- pass to DriveFilesList
       />
       <PaginationControl
         count={-1} // unknown total count
