@@ -19,7 +19,7 @@ export default function CreateFolderForm({ onSuccess, disabled }) {
     setError('');
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/drive/create-folder`, {
+      const res = await axios.post(`${API_BASE_URL}/api/drive/folder`, {
         name: folderName.trim(),
       });
 
