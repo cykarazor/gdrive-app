@@ -25,7 +25,7 @@ module.exports = function (auth) {
     authUrl: '/auth/google',
   };
 
-  // Simple test connection route
+  // Test connection route
   router.get('/test', async (req, res) => {
     try {
       const { files } = await driveSvc.listFiles({ pageSize: 1 });
@@ -65,7 +65,7 @@ module.exports = function (auth) {
     }
   });
 
-  // List files route
+  // List files (root or inside folder)
   router.get('/files', async (req, res) => {
     try {
       const { folderId = 'root', pageSize = 10, pageToken = null, orderBy } = req.query;
@@ -83,7 +83,7 @@ module.exports = function (auth) {
     }
   });
 
-  // Create folder route
+  // Create folder
   router.post('/folder', async (req, res) => {
     try {
       const { name, parentId = 'root' } = req.body || {};
@@ -157,22 +157,6 @@ module.exports = function (auth) {
       if (isAuthError(err)) return res.status(401).json(authErrorPayload);
       res.status(500).json({ message: 'Failed to download file' });
     }
-  });
-
-  // ==========================
-  // Backward-compatible aliases
-  // ==========================
-
-  // GET /api/drive/list -> /api/drive/files
-  router.get('/list', (req, res) => {
-    const query = req.originalUrl.split('?')[1]; // only query string
-    res.redirect(`/api/drive/files${query ? '?' + query : ''}`);
-  });
-
-  // POST /api/drive/create-folder -> /api/drive/folder
-  router.post('/create-folder', (req, res, next) => {
-    req.url = '/folder'; // relative path only
-    next();
   });
 
   return router;
