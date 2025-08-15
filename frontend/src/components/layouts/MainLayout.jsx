@@ -117,7 +117,7 @@ export default function MainLayout({ children, onReloadFiles }) {
               Back
             </Button>
           )}
-          <Breadcrumbs aria-label="breadcrumb">
+          {/*<Breadcrumbs aria-label="breadcrumb">
             <Link
               underline="hover"
               color="inherit"
@@ -151,7 +151,7 @@ export default function MainLayout({ children, onReloadFiles }) {
             {currentFolder.name !== "My Drive" && (
               <Typography color="text.primary">{currentFolder.name}</Typography>
             )}
-          </Breadcrumbs>
+          </Breadcrumbs>*/}
         </Box>
 
         {children}
