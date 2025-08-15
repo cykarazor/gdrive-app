@@ -39,7 +39,7 @@ export default function MainLayout({ children, onReloadFiles }) {
   );
 
   // Build breadcrumb path: root + folderStack + currentFolder
-  const path = [{ id: "root", name: "My Drive" }, ...folderStack, currentFolder];
+  //const path = [{ id: "root", name: "My Drive" }, ...folderStack, currentFolder];
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -99,7 +99,17 @@ export default function MainLayout({ children, onReloadFiles }) {
         {children}
       </Box>
 
-      <Footer />
+      <Box
+        component="footer"
+        sx={{
+          width: '100%',       // full width
+          position: 'relative', 
+          left: 0,
+          mt: 4,               // optional spacing from content
+        }}
+      >
+        <Footer />
+      </Box>
 
       {/* Modals */}
       <UploadModal open={uploadModalOpen} onClose={handleUploadClose} onUploadSuccess={handleUploadSuccess} folderId={currentFolder.id} />
