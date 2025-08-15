@@ -5,7 +5,7 @@ import Header from "../Header";
 import Footer from "../Footer";
 import UploadModal from "../modals/UploadModal";
 import CreateFolderModal from '../modals/CreateFolderModal';
-import { useCurrentFolder } from "../../context/CurrentFolderContext";
+import { useCurrentFolder } from "../context/CurrentFolderContext";
 
 const drawerWidth = 240;
 const headerHeight = 64;
