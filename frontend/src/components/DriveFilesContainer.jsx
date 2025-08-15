@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
-import { Button, Box, Typography } from '@mui/material';
+import { Button, Box, Typography, Breadcrumbs, Link } from '@mui/material';
 import UploadModal from './modals/UploadModal';
 import { useCurrentFolder } from '../context/CurrentFolderContext';
 
@@ -24,7 +24,7 @@ function DriveFilesContainer({ reloadFlag }) {
   const [pageTokens, setPageTokens] = useState(['']); 
 
   // Context: current folder & folder stack
-  const { currentFolder, goToFolder } = useCurrentFolder();
+  const { currentFolder, folderStack, goToFolder, goBack, goToBreadcrumb } = useCurrentFolder();
 
   // Upload modal state
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -93,7 +93,7 @@ function DriveFilesContainer({ reloadFlag }) {
     setPageTokens(['']);
   };
 
-  // Folder click: use context goToFolder
+  // Folder click: navigate into folder
   const handleFolderClick = (folderId, folderName) => {
     goToFolder({ id: folderId, name: folderName });
     setPage(0);
@@ -101,13 +101,41 @@ function DriveFilesContainer({ reloadFlag }) {
     fetchFiles(null, folderId);
   };
 
+  // Build breadcrumb path
+  const path = [{ id: 'root', name: 'My Drive' }, ...folderStack, currentFolder];
+
   return (
     <Box>
       {/* Top toolbar */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          {currentFolder.name}
-        </Typography>
+        {folderStack.length > 0 && (
+          <Button variant="outlined" onClick={() => { goBack(); setPage(0); setPageTokens(['']); fetchFiles(); }}>
+            Back
+          </Button>
+        )}
+
+        <Breadcrumbs aria-label="breadcrumb" sx={{ flexGrow: 1 }}>
+          {path.map((folder, idx) => (
+            <Link
+              key={folder.id}
+              underline={idx === path.length - 1 ? 'none' : 'hover'}
+              color={idx === path.length - 1 ? 'text.primary' : 'inherit'}
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                if (idx !== path.length - 1) {
+                  goToBreadcrumb(idx);
+                  setPage(0);
+                  setPageTokens(['']);
+                  fetchFiles(path[idx].id);
+                }
+              }}
+            >
+              {folder.name}
+            </Link>
+          ))}
+        </Breadcrumbs>
+
         <Button variant="contained" onClick={() => setUploadOpen(true)}>
           Upload
         </Button>

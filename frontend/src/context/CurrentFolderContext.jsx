@@ -1,11 +1,11 @@
-// frontend/src/context/CurrentFolderContext.jsx
 import { createContext, useContext, useState } from "react";
 
 const CurrentFolderContext = createContext();
 
 export const CurrentFolderProvider = ({ children }) => {
-  const [folderStack, setFolderStack] = useState([]); // parent folders
-  const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'My Drive' });
+  const rootFolder = { id: "root", name: "My Drive" };
+  const [folderStack, setFolderStack] = useState([]); // parents
+  const [currentFolder, setCurrentFolder] = useState(rootFolder);
 
   const goToFolder = (folder) => {
     setFolderStack((prev) => [...prev, currentFolder]);
@@ -20,10 +20,11 @@ export const CurrentFolderProvider = ({ children }) => {
   };
 
   const goToBreadcrumb = (index) => {
-    const newStack = folderStack.slice(0, index);
-    const newCurrent = folderStack[index];
-    setFolderStack(newStack);
-    setCurrentFolder(newCurrent);
+    // Build path: [root, ...folderStack, currentFolder]
+    const path = [rootFolder, ...folderStack, currentFolder];
+    const folder = path[index];
+    setCurrentFolder(folder);
+    setFolderStack(path.slice(1, index)); // folders before clicked folder
   };
 
   return (
@@ -34,6 +35,7 @@ export const CurrentFolderProvider = ({ children }) => {
         goToFolder,
         goBack,
         goToBreadcrumb,
+        rootFolder,
       }}
     >
       {children}
