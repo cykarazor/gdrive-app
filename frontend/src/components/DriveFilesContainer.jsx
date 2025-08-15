@@ -1,128 +1,177 @@
-// frontend/src/components/layouts/MainLayout.jsx
-import { useState } from "react";
-import { Drawer, List, ListItem, ListItemText, Box } from "@mui/material";
-import Header from "./Header";
-import Footer from "./Footer";
-import UploadModal from "./modals/UploadModal";
-import CreateFolderModal from './modals/CreateFolderModal';
-import { useCurrentFolder } from "../context/CurrentFolderContext";
+// frontend/src/components/DriveFilesContainer.jsx
+import { useEffect, useState, useCallback } from 'react';
+import axios from 'axios';
+import DriveFilesList from './DriveFilesList';
+import PaginationControl from './PaginationControls';
+import { Button, Box, Breadcrumbs, Link } from '@mui/material';
+import UploadModal from './modals/UploadModal';
+import { useCurrentFolder } from '../context/CurrentFolderContext';
 
-const drawerWidth = 240;
-const headerHeight = 64;
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-export default function MainLayout({ children, onReloadFiles }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
+function DriveFilesContainer({ reloadFlag }) {
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [orderBy, setOrderBy] = useState('modifiedTime');
+  const [order, setOrder] = useState('desc');
 
-  const { currentFolder } = useCurrentFolder();
+  // Pagination state
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(0);
 
-  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+  // Drive API pagination token
+  const [nextPageToken, setNextPageToken] = useState(null);
+  const [pageTokens, setPageTokens] = useState(['']); 
 
-  const handleUploadClick = () => setUploadModalOpen(true);
-  const handleUploadClose = () => setUploadModalOpen(false);
+  // Context: current folder & folder stack
+  const { currentFolder, folderStack, goToFolder, goBack, goToBreadcrumb } = useCurrentFolder();
 
-  const handleCreateFolderClick = () => setCreateFolderModalOpen(true);
-  const handleCreateFolderClose = () => setCreateFolderModalOpen(false);
+  // Upload modal state
+  const [uploadOpen, setUploadOpen] = useState(false);
 
-  const handleUploadSuccess = () => {
-    if (typeof onReloadFiles === "function") onReloadFiles();
-  };
+  // Fetch files
+  const fetchFiles = useCallback(
+    async (token = null, folderIdParam = currentFolder.id) => {
+      setLoading(true);
+      try {
+        const params = {
+          pageSize: rowsPerPage,
+          orderBy: `${orderBy} ${order}`,
+          folderId: folderIdParam,
+        };
+        if (token) params.pageToken = token;
 
-  const handleCreateFolderSuccess = () => {
-    if (typeof onReloadFiles === "function") onReloadFiles();
-  };
-
-  const drawer = (
-    <Box sx={{ width: drawerWidth, pt: `${headerHeight}px` }}>
-      <List>
-        <ListItem button onClick={handleUploadClick}>
-          <ListItemText primary="Upload File" />
-        </ListItem>
-        <ListItem button onClick={handleCreateFolderClick}>
-          <ListItemText primary="Create Folder" />
-        </ListItem>
-      </List>
-    </Box>
+        const res = await axios.get(`${API_BASE_URL}/api/drive/files`, { params });
+        setFiles(res.data.files || []);
+        setNextPageToken(res.data.nextPageToken || null);
+      } catch (err) {
+        console.error('Failed to fetch files:', err);
+        setFiles([]);
+        setNextPageToken(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [rowsPerPage, orderBy, order, currentFolder.id]
   );
 
+  useEffect(() => {
+    setPage(0);
+    setPageTokens(['']);
+    fetchFiles(null);
+  }, [fetchFiles, reloadFlag]);
+
+  // Page navigation
+  const handlePageChange = (_event, newPage) => {
+    if (newPage > page && nextPageToken) {
+      fetchFiles(nextPageToken);
+      setPage(newPage);
+      const newTokens = [...pageTokens];
+      newTokens[newPage] = nextPageToken;
+      setPageTokens(newTokens);
+    } else if (newPage < page) {
+      const prevToken = pageTokens[newPage];
+      fetchFiles(prevToken || null);
+      setPage(newPage);
+    }
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+    setPageTokens(['']);
+  };
+
+  const handleSortChange = (property) => {
+    if (orderBy === property) {
+      setOrder(order === 'asc' ? 'desc' : 'asc');
+    } else {
+      setOrderBy(property);
+      setOrder('asc');
+    }
+    setPage(0);
+    setPageTokens(['']);
+  };
+
+  // Folder click: navigate into folder
+  const handleFolderClick = (folderId, folderName) => {
+    goToFolder({ id: folderId, name: folderName });
+    setPage(0);
+    setPageTokens(['']);
+    fetchFiles(null, folderId);
+  };
+
+  // Build breadcrumb path
+  const path = [{ id: 'root', name: 'My Drive' }, ...folderStack, currentFolder];
+
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <Header onMenuClick={handleDrawerToggle} />
+    <Box>
+      {/* Top toolbar */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
+        {folderStack.length > 0 && (
+          <Button variant="outlined" onClick={() => { goBack(); setPage(0); setPageTokens(['']); fetchFiles(); }}>
+            Back
+          </Button>
+        )}
 
-      {/* Permanent drawer on desktop */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: "none", sm: "block" },
-          "& .MuiDrawer-paper": {
-            width: drawerWidth,
-            boxSizing: "border-box",
-            position: "fixed",
-            height: "100vh",
-            pt: `${headerHeight}px`,
-          },
-        }}
-        open
-      >
-        {drawer}
-      </Drawer>
+        <Breadcrumbs aria-label="breadcrumb" sx={{ flexGrow: 1 }}>
+          {path.map((folder, idx) => (
+            <Link
+              key={folder.id}
+              underline={idx === path.length - 1 ? 'none' : 'hover'}
+              color={idx === path.length - 1 ? 'text.primary' : 'inherit'}
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                if (idx !== path.length - 1) {
+                  goToBreadcrumb(idx);
+                  setPage(0);
+                  setPageTokens(['']);
+                  fetchFiles(path[idx].id);
+                }
+              }}
+            >
+              {folder.name}
+            </Link>
+          ))}
+        </Breadcrumbs>
 
-      {/* Temporary drawer on mobile */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: "block", sm: "none" },
-          "& .MuiDrawer-paper": {
-            width: drawerWidth,
-            boxSizing: "border-box",
-            pt: `${headerHeight}px`,
-          },
-        }}
-      >
-        {drawer}
-      </Drawer>
-
-      {/* Main content */}
-      <Box
-        component="main"
-        sx={{
-          ml: { sm: `${drawerWidth}px` },
-          mt: `${headerHeight}px`,
-          flexGrow: 1,
-          pb: "80px", // space for footer
-          boxSizing: "border-box",
-          p: 2,
-          minHeight: `calc(100vh - ${headerHeight}px)`,
-        }}
-      >
-        {children}
+        <Button variant="contained" onClick={() => setUploadOpen(true)}>
+          Upload
+        </Button>
       </Box>
 
-      {/* Footer spans full width */}
-      <Box sx={{ width: "100%", position: "relative", left: 0, mt: "auto" }}>
-        <Footer />
-      </Box>
-
-      {/* Modals */}
+      {/* Upload Modal */}
       <UploadModal
-        open={uploadModalOpen}
-        onClose={handleUploadClose}
-        onUploadSuccess={handleUploadSuccess}
-        folderId={currentFolder.id}
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        folderId={currentFolder.id} 
+        onUploadSuccess={() => {
+          fetchFiles(null, currentFolder.id);
+          setUploadOpen(false);
+        }}
       />
 
-      <CreateFolderModal
-        open={createFolderModalOpen}
-        onClose={handleCreateFolderClose}
-        onCreateSuccess={() => {
-          handleCreateFolderClose();
-          handleCreateFolderSuccess();
-        }}
+      <DriveFilesList
+        files={files}
+        loading={loading}
+        orderBy={orderBy}
+        order={order}
+        onSortChange={handleSortChange}
+        onFolderClick={handleFolderClick}
+      />
+
+      <PaginationControl
+        count={-1}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+        showLastButton={false}
+        showFirstButton={false}
       />
     </Box>
   );
 }
+
+export default DriveFilesContainer;
