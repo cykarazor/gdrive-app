@@ -6,16 +6,16 @@ import {
   ListItem,
   ListItemText,
   Box,
-  Breadcrumbs,
-  Link,
+  //Breadcrumbs,
+  //Link,
   Button,
-  Typography,
+  //Typography,
 } from "@mui/material";
 import Header from "../Header";
 import Footer from "../Footer";
 import UploadModal from "../modals/UploadModal";
 import CreateFolderModal from "../modals/CreateFolderModal";
-import { useCurrentFolder } from "../../context/CurrentFolderContext";
+//import { useCurrentFolder } from "../../context/CurrentFolderContext";
 
 const drawerWidth = 240;
 const headerHeight = 64;
@@ -25,7 +25,7 @@ export default function MainLayout({ children, onReloadFiles }) {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
 
-  const { currentFolder, folderStack, goBack, goToBreadcrumb } = useCurrentFolder();
+  //const { currentFolder, folderStack, goBack, goToBreadcrumb } = useCurrentFolder();
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
   const handleUploadClick = () => setUploadModalOpen(true);
