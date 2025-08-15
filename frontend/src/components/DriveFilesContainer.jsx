@@ -4,7 +4,7 @@ import axios from 'axios';
 import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
 import { Button, Box, Typography } from '@mui/material';
-import FileUpload from './FileUpload';
+import UploadModal from '../modals/UploadModal';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -26,6 +26,9 @@ function DriveFilesContainer({ reloadFlag }) {
   const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'My Drive' });
   const [folderStack, setFolderStack] = useState([]); // for back button
 
+  // NEW: File upload state
+  const [uploadOpen, setUploadOpen] = useState(false);
+  
   // Fetch files from backend
   const fetchFiles = useCallback(
     async (token = null, folderIdParam = currentFolder.id) => {
@@ -115,20 +118,34 @@ function DriveFilesContainer({ reloadFlag }) {
 
   return (
     <Box>
+      {/* Top toolbar */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
         {folderStack.length > 0 && (
           <Button variant="outlined" onClick={handleBackClick}>
             Back
           </Button>
         )}
-        <Typography variant="h6">{currentFolder.name}</Typography>
+        <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          {currentFolder.name}
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => setUploadOpen(true)}
+        >
+          Upload
+        </Button>
       </Box>
 
-      {/* ✅ Upload box — pass folderId & refresh after upload */}
-        <FileUpload
-          folderId={currentFolder.id}
-          onUploadSuccess={() => fetchFiles(null, currentFolder.id)}
-        />
+      {/* Upload Modal */}
+      <UploadModal
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        folderId={currentFolder.id} // ✅ pass current folder ID to modal
+        onUploadSuccess={() => {
+          fetchFiles(null, currentFolder.id);
+          setUploadOpen(false);
+        }}
+      />
 
       <DriveFilesList
         files={files}
@@ -136,11 +153,11 @@ function DriveFilesContainer({ reloadFlag }) {
         orderBy={orderBy}
         order={order}
         onSortChange={handleSortChange}
-        onFolderClick={handleFolderClick} // ✅ pass folder click handler
+        onFolderClick={handleFolderClick}
       />
 
       <PaginationControl
-        count={-1} // unknown total count
+        count={-1}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handlePageChange}
