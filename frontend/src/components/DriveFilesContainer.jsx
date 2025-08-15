@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
-import { Button, Box, Typography, Breadcrumbs, Link } from '@mui/material';
+import { Button, Box, Breadcrumbs, Link } from '@mui/material';
 import UploadModal from './modals/UploadModal';
 import { useCurrentFolder } from '../context/CurrentFolderContext';
 

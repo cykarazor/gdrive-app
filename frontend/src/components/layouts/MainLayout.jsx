@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Drawer, List, ListItem, ListItemText, Box, Breadcrumbs, Typography, Link } from "@mui/material";
+import { Drawer, List, ListItem, ListItemText, Box, Breadcrumbs, Link } from "@mui/material";
 import Header from "../Header";
 import Footer from "../Footer";
 import UploadModal from "../modals/UploadModal";
