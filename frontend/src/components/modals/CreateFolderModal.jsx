@@ -21,3 +21,4 @@ export default function CreateFolderModal({ open, onClose, onCreateSuccess, fold
     </Dialog>
   );
 }
+

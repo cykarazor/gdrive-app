@@ -1,10 +1,10 @@
-// frontend/src/components/DriveFilesContainer.jsx
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
 import { Button, Box, Breadcrumbs, Link } from '@mui/material';
 import UploadModal from './modals/UploadModal';
+import CreateFolderModal from './modals/CreateFolderModal';
 import { useCurrentFolder } from '../context/CurrentFolderContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -26,6 +26,9 @@ function DriveFilesContainer({ reloadFlag }) {
 
   // Upload modal
   const [uploadOpen, setUploadOpen] = useState(false);
+
+  // Create folder modal
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
 
   // Fetch files helper
   const fetchFiles = useCallback(
@@ -58,7 +61,7 @@ function DriveFilesContainer({ reloadFlag }) {
     setPage(0);
     setPageTokens(['']);
     fetchFiles(null);
-  }, [fetchFiles, reloadFlag, currentFolder.id]); // NEW: added currentFolder.id so files reload on folder change
+  }, [fetchFiles, reloadFlag, currentFolder.id]); // ✅ reload on folder change
 
   // Pagination
   const handlePageChange = (_event, newPage) => {
@@ -95,11 +98,11 @@ function DriveFilesContainer({ reloadFlag }) {
   // Folder click
   const handleFolderClick = (folderId, folderName) => {
     goToFolder({ id: folderId, name: folderName });
-    // fetchFiles(null, folderId); // ❌ removed direct call — would use stale folder state
+    // fetchFiles(null, folderId); // ❌ removed direct call — useEffect reloads on folder change
   };
 
   // Build breadcrumb path
-  const path = [{ id: 'root', name: 'My Drive' }]; // Always start with root
+  const path = [{ id: 'root', name: 'My Drive' }];
   if (currentFolder.id !== 'root') {
     path.push(...folderStack, currentFolder);
   }
@@ -113,7 +116,7 @@ function DriveFilesContainer({ reloadFlag }) {
             variant="outlined"
             onClick={() => {
               goBack();
-              // fetchFiles(); // ❌ removed direct call — will refetch via useEffect when currentFolder changes
+              // fetchFiles(); // ❌ removed direct call — reload triggers via useEffect
             }}
           >
             Back
@@ -131,7 +134,7 @@ function DriveFilesContainer({ reloadFlag }) {
                 e.preventDefault();
                 if (idx !== path.length - 1) {
                   goToBreadcrumb(idx);
-                  // fetchFiles(path[idx].id); // ❌ removed direct call — will trigger via useEffect
+                  // fetchFiles(path[idx].id); // ❌ useEffect will reload
                 }
               }}
             >
@@ -140,8 +143,14 @@ function DriveFilesContainer({ reloadFlag }) {
           ))}
         </Breadcrumbs>
 
+        {/* Upload Button */}
         <Button variant="contained" onClick={() => setUploadOpen(true)}>
           Upload
+        </Button>
+
+        {/* Create Folder Button */}
+        <Button variant="contained" onClick={() => setCreateFolderOpen(true)}>
+          Create Folder
         </Button>
       </Box>
 
@@ -153,6 +162,17 @@ function DriveFilesContainer({ reloadFlag }) {
         onUploadSuccess={() => {
           fetchFiles(null, currentFolder.id);
           setUploadOpen(false);
+        }}
+      />
+
+      {/* Create Folder Modal */}
+      <CreateFolderModal
+        open={createFolderOpen}
+        onClose={() => setCreateFolderOpen(false)}
+        folderId={currentFolder.id} // ✅ creates folder in current folder
+        onCreateSuccess={() => {
+          fetchFiles(null, currentFolder.id);
+          setCreateFolderOpen(false);
         }}
       />
 

@@ -21,11 +21,9 @@ export default function CreateFolderForm({ onSuccess, disabled, folderId }) { //
     try {
       const payload = {
         name: folderName.trim(),
-        // parentId will default to root if folderId not provided
         parentId: folderId || 'root', // ✅ send folderId to backend
       };
 
-      // const res = await axios.post(`${API_BASE_URL}/api/drive/folder`, { name: folderName.trim() }); // <-- old code
       const res = await axios.post(`${API_BASE_URL}/api/drive/folder`, payload); // ✅ new code with parentId
 
       if (res.status === 200) {
