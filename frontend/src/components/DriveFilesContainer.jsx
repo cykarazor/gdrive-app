@@ -5,6 +5,7 @@ import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
 import { Button, Box, Typography } from '@mui/material';
 import UploadModal from './modals/UploadModal';
+import { useCurrentFolder } from '../context/CurrentFolderContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -20,16 +21,15 @@ function DriveFilesContainer({ reloadFlag }) {
 
   // Drive API pagination token
   const [nextPageToken, setNextPageToken] = useState(null);
-  const [pageTokens, setPageTokens] = useState(['']); // first page token is empty
+  const [pageTokens, setPageTokens] = useState(['']); 
 
-  // Current folder state
-  const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'My Drive' });
-  const [folderStack, setFolderStack] = useState([]); // for back button
+  // Context: current folder & folder stack
+  const { currentFolder, goToFolder } = useCurrentFolder();
 
-  // NEW: File upload state
+  // Upload modal state
   const [uploadOpen, setUploadOpen] = useState(false);
-  
-  // Fetch files from backend
+
+  // Fetch files
   const fetchFiles = useCallback(
     async (token = null, folderIdParam = currentFolder.id) => {
       setLoading(true);
@@ -37,7 +37,7 @@ function DriveFilesContainer({ reloadFlag }) {
         const params = {
           pageSize: rowsPerPage,
           orderBy: `${orderBy} ${order}`,
-          folderId: folderIdParam, // ✅ send current folder ID
+          folderId: folderIdParam,
         };
         if (token) params.pageToken = token;
 
@@ -55,7 +55,6 @@ function DriveFilesContainer({ reloadFlag }) {
     [rowsPerPage, orderBy, order, currentFolder.id]
   );
 
-  // Load first page on mount or reload
   useEffect(() => {
     setPage(0);
     setPageTokens(['']);
@@ -64,14 +63,12 @@ function DriveFilesContainer({ reloadFlag }) {
 
   // Page navigation
   const handlePageChange = (_event, newPage) => {
-    if (newPage > page) {
-      if (nextPageToken) {
-        fetchFiles(nextPageToken);
-        setPage(newPage);
-        const newTokens = [...pageTokens];
-        newTokens[newPage] = nextPageToken;
-        setPageTokens(newTokens);
-      }
+    if (newPage > page && nextPageToken) {
+      fetchFiles(nextPageToken);
+      setPage(newPage);
+      const newTokens = [...pageTokens];
+      newTokens[newPage] = nextPageToken;
+      setPageTokens(newTokens);
     } else if (newPage < page) {
       const prevToken = pageTokens[newPage];
       fetchFiles(prevToken || null);
@@ -96,42 +93,22 @@ function DriveFilesContainer({ reloadFlag }) {
     setPageTokens(['']);
   };
 
-  // NEW: folder click handler
+  // Folder click: use context goToFolder
   const handleFolderClick = (folderId, folderName) => {
-    setFolderStack((prev) => [...prev, currentFolder]); // push current folder to stack
-    setCurrentFolder({ id: folderId, name: folderName });
+    goToFolder({ id: folderId, name: folderName });
     setPage(0);
     setPageTokens(['']);
     fetchFiles(null, folderId);
-  };
-
-  // NEW: back button handler
-  const handleBackClick = () => {
-    if (folderStack.length === 0) return;
-    const prevFolder = folderStack[folderStack.length - 1];
-    setFolderStack((prev) => prev.slice(0, prev.length - 1));
-    setCurrentFolder(prevFolder);
-    setPage(0);
-    setPageTokens(['']);
-    fetchFiles(null, prevFolder.id);
   };
 
   return (
     <Box>
       {/* Top toolbar */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
-        {folderStack.length > 0 && (
-          <Button variant="outlined" onClick={handleBackClick}>
-            Back
-          </Button>
-        )}
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           {currentFolder.name}
         </Typography>
-        <Button
-          variant="contained"
-          onClick={() => setUploadOpen(true)}
-        >
+        <Button variant="contained" onClick={() => setUploadOpen(true)}>
           Upload
         </Button>
       </Box>
@@ -140,7 +117,7 @@ function DriveFilesContainer({ reloadFlag }) {
       <UploadModal
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
-        folderId={currentFolder.id} // ✅ pass current folder ID to modal
+        folderId={currentFolder.id} 
         onUploadSuccess={() => {
           fetchFiles(null, currentFolder.id);
           setUploadOpen(false);

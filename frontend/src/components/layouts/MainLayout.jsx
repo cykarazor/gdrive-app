@@ -1,44 +1,45 @@
-//frontend/src/components/layouts/MainLayout.jsx
+// frontend/src/components/layouts/MainLayout.jsx
 import { useState } from "react";
-import { Drawer, List, ListItem, ListItemText, Box } from "@mui/material";
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  Box,
+  Breadcrumbs,
+  Link,
+  Typography,
+} from "@mui/material";
 import Header from "../Header";
 import Footer from "../Footer";
 import UploadModal from "../modals/UploadModal";
-import CreateFolderModal from '../modals/CreateFolderModal'; // NEW
+import CreateFolderModal from "../modals/CreateFolderModal";
+import { useCurrentFolder } from "../../context/CurrentFolderContext";
 
 const drawerWidth = 240;
 const headerHeight = 64;
 
-export default function MainLayout({
-  children,
-  // onCreateFolderClick, // OLD - no longer used directly for drawer button
-  onReloadFiles,  // new prop to notify parent to reload files
-}) {
+export default function MainLayout({ children, onReloadFiles }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false); // NEW
+  const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
+
+  const { folderStack, currentFolder, goToBreadcrumb } = useCurrentFolder();
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const handleUploadClick = () => setUploadModalOpen(true);
   const handleUploadClose = () => setUploadModalOpen(false);
 
-  // NEW: handlers for Create Folder modal
   const handleCreateFolderClick = () => setCreateFolderModalOpen(true);
   const handleCreateFolderClose = () => setCreateFolderModalOpen(false);
 
-  // Call reload callback after successful upload
   const handleUploadSuccess = () => {
-    if (typeof onReloadFiles === "function") {
-      onReloadFiles();
-    }
+    if (typeof onReloadFiles === "function") onReloadFiles();
   };
 
-  // NEW: Call reload callback after successful folder creation
   const handleCreateFolderSuccess = () => {
-    if (typeof onReloadFiles === "function") {
-      onReloadFiles();
-    }
+    if (typeof onReloadFiles === "function") onReloadFiles();
   };
 
   const drawer = (
@@ -47,7 +48,6 @@ export default function MainLayout({
         <ListItem button onClick={handleUploadClick}>
           <ListItemText primary="Upload File" />
         </ListItem>
-        {/* Updated: open CreateFolderModal instead of calling onCreateFolderClick directly */}
         <ListItem button onClick={handleCreateFolderClick}>
           <ListItemText primary="Create Folder" />
         </ListItem>
@@ -59,7 +59,7 @@ export default function MainLayout({
     <Box sx={{ minHeight: "100vh", position: "relative" }}>
       <Header onMenuClick={handleDrawerToggle} />
 
-      {/* Permanent drawer fixed on desktop */}
+      {/* Permanent drawer for desktop */}
       <Drawer
         variant="permanent"
         sx={{
@@ -95,7 +95,7 @@ export default function MainLayout({
         {drawer}
       </Drawer>
 
-      {/* Main content shifted right on desktop */}
+      {/* Main content */}
       <Box
         component="main"
         sx={{
@@ -104,20 +104,49 @@ export default function MainLayout({
           pb: "80px",
           minHeight: `calc(100vh - ${headerHeight}px)`,
           boxSizing: "border-box",
+          p: 2,
         }}
       >
+        {/* Breadcrumbs */}
+        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+          <Link
+            component="button"
+            underline="hover"
+            color="inherit"
+            onClick={() => goToBreadcrumb(-1)}
+          >
+            My Drive
+          </Link>
+
+          {folderStack.map((folder, index) => (
+            <Link
+              key={folder.id}
+              component="button"
+              underline="hover"
+              color="inherit"
+              onClick={() => goToBreadcrumb(index)}
+            >
+              {folder.name}
+            </Link>
+          ))}
+
+          <Typography color="text.primary">{currentFolder.name}</Typography>
+        </Breadcrumbs>
+
         {children}
       </Box>
 
       <Footer />
 
+      {/* Upload Modal */}
       <UploadModal
         open={uploadModalOpen}
         onClose={handleUploadClose}
         onUploadSuccess={handleUploadSuccess}
+        folderId={currentFolder.id}
       />
 
-      {/* NEW: Create Folder Modal */}
+      {/* Create Folder Modal */}
       <CreateFolderModal
         open={createFolderModalOpen}
         onClose={handleCreateFolderClose}

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import MainLayout from "./components/layouts/MainLayout";
 import DriveFilesContainer from "./components/DriveFilesContainer";
+import { CurrentFolderProvider } from "./context/CurrentFolderContext";
 
 function App() {
   const [reloadFlag, setReloadFlag] = useState(false);
@@ -10,11 +11,13 @@ function App() {
   const triggerReload = () => setReloadFlag((prev) => !prev);
 
   return (
-    <MainLayout
-      onReloadFiles={triggerReload}  // Pass reload callback
-    >
-      <DriveFilesContainer reloadFlag={reloadFlag} /> {/* Pass reload flag */}
-    </MainLayout>
+    <CurrentFolderProvider>
+      <MainLayout
+        onReloadFiles={triggerReload}  // Pass reload callback
+      >
+        <DriveFilesContainer reloadFlag={reloadFlag} /> {/* Pass reload flag */}
+      </MainLayout>
+    </CurrentFolderProvider>
   );
 }
 
