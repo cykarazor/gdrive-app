@@ -20,12 +20,17 @@ export const CurrentFolderProvider = ({ children }) => {
   };
 
   const goToBreadcrumb = (index) => {
-    // Build path: [root, ...folderStack, currentFolder]
-    const path = [rootFolder, ...folderStack, currentFolder];
-    const folder = path[index];
-    setCurrentFolder(folder);
-    setFolderStack(path.slice(1, index)); // folders before clicked folder
-  };
+  if (index === -1) {
+    // special case for the root “My Drive”
+    setFolderStack([]);
+    setCurrentFolder({ id: 'root', name: 'My Drive' });
+    return;
+  }
+  const newCurrent = folderStack[index];
+  const newStack = folderStack.slice(0, index);
+  setFolderStack(newStack);
+  setCurrentFolder(newCurrent);
+};
 
   return (
     <CurrentFolderContext.Provider

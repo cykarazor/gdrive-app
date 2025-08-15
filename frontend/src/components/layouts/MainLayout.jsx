@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Drawer, List, ListItem, ListItemText, Box, Breadcrumbs, Link } from "@mui/material";
+import { Drawer, List, ListItem, ListItemText, Box, Breadcrumbs, Link, Typography } from "@mui/material";
 import Header from "../Header";
 import Footer from "../Footer";
 import UploadModal from "../modals/UploadModal";
@@ -72,17 +72,28 @@ export default function MainLayout({ children, onReloadFiles }) {
         sx={{ flex: 1, ml: { sm: `${drawerWidth}px` }, mt: `${headerHeight}px`, p: 2, boxSizing: "border-box" }}
       >
         <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-          {path.map((folder, idx) => (
+          <Link
+            underline="hover"
+            color="inherit"
+            href="#"
+            onClick={() => goToBreadcrumb(-1)} // root
+          >
+            My Drive
+          </Link>
+
+          {folderStack.map((folder, idx) => (
             <Link
               key={folder.id}
               underline="hover"
-              color={idx === path.length - 1 ? "text.primary" : "inherit"}
+              color="inherit"
               href="#"
-              onClick={(e) => { e.preventDefault(); goToBreadcrumb(idx); }}
+              onClick={() => goToBreadcrumb(idx)}
             >
               {folder.name}
             </Link>
           ))}
+
+          <Typography color="text.primary">{currentFolder.name}</Typography>
         </Breadcrumbs>
 
         {children}
