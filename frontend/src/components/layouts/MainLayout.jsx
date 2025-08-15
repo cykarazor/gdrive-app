@@ -1,10 +1,11 @@
 // frontend/src/components/layouts/MainLayout.jsx
 import { useState } from "react";
-import { Drawer, List, ListItem, ListItemText, Box } from "@mui/material";
+import { Drawer, List, ListItem, ListItemText, Box, Button } from "@mui/material";
 import Header from "../Header";
 import Footer from "../Footer";
 import UploadModal from "../modals/UploadModal";
 import CreateFolderModal from "../modals/CreateFolderModal";
+import { useCurrentFolder } from "../../context/CurrentFolderContext"; // ✅ to get currentFolder
 
 const drawerWidth = 240;
 const headerHeight = 64;
@@ -14,7 +15,10 @@ export default function MainLayout({ children, onReloadFiles }) {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
 
-  // Drawer toggle handlers
+  // Current folder from context
+  const { currentFolder } = useCurrentFolder();
+
+  // Drawer toggle
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   // Upload modal handlers
@@ -96,10 +100,20 @@ export default function MainLayout({ children, onReloadFiles }) {
           p: 2,
         }}
       >
+        {/* Optional top toolbar for Upload / Create Folder */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+          <Button variant="contained" onClick={handleUploadClick}>
+            Upload
+          </Button>
+          <Button variant="contained" onClick={handleCreateFolderClick}>
+            Create Folder
+          </Button>
+        </Box>
+
         {children}
       </Box>
 
-      {/* Footer at bottom, full width */}
+      {/* Footer */}
       <Box component="footer" sx={{ mt: "auto", width: "100%" }}>
         <Footer />
       </Box>
@@ -109,7 +123,7 @@ export default function MainLayout({ children, onReloadFiles }) {
         open={uploadModalOpen}
         onClose={handleUploadClose}
         onUploadSuccess={handleUploadSuccess}
-        // folderId removed: handled in DriveFilesContainer
+        folderId={currentFolder.id} // ✅ ensure file uploads in current folder
       />
 
       {/* Create Folder Modal */}
@@ -118,8 +132,9 @@ export default function MainLayout({ children, onReloadFiles }) {
         onClose={handleCreateFolderClose}
         onCreateSuccess={() => {
           handleCreateFolderClose();
-          handleCreateFolderSuccess();
+          handleCreateFolderSuccess(); // reload files after folder creation
         }}
+        folderId={currentFolder.id} // ✅ ensure folder created in current folder
       />
     </Box>
   );
