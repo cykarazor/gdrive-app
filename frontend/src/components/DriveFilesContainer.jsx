@@ -4,6 +4,7 @@ import axios from 'axios';
 import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
 import { Button, Box, Typography } from '@mui/material';
+import FileUpload from './FileUpload';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -122,6 +123,12 @@ function DriveFilesContainer({ reloadFlag }) {
         )}
         <Typography variant="h6">{currentFolder.name}</Typography>
       </Box>
+
+      {/* ✅ Upload box — pass folderId & refresh after upload */}
+        <FileUpload
+          folderId={currentFolder.id}
+          onUploadSuccess={() => fetchFiles(null, currentFolder.id)}
+        />
 
       <DriveFilesList
         files={files}
