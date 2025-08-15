@@ -21,7 +21,7 @@ function DriveFilesContainer({ reloadFlag }) {
 
   // Drive API pagination token
   const [nextPageToken, setNextPageToken] = useState(null);
-  const [pageTokens, setPageTokens] = useState(['']); 
+  const [pageTokens, setPageTokens] = useState(['']);
 
   // Context: current folder & folder stack
   const { currentFolder, folderStack, goToFolder, goBack, goToBreadcrumb } = useCurrentFolder();
@@ -55,13 +55,14 @@ function DriveFilesContainer({ reloadFlag }) {
     [rowsPerPage, orderBy, order, currentFolder.id]
   );
 
+  // Initial load & reload
   useEffect(() => {
     setPage(0);
     setPageTokens(['']);
     fetchFiles(null);
   }, [fetchFiles, reloadFlag]);
 
-  // Page navigation
+  // Pagination handlers
   const handlePageChange = (_event, newPage) => {
     if (newPage > page && nextPageToken) {
       fetchFiles(nextPageToken);
@@ -101,15 +102,28 @@ function DriveFilesContainer({ reloadFlag }) {
     fetchFiles(null, folderId);
   };
 
-  // Build breadcrumb path
-  const path = [{ id: 'root', name: 'My Drive' }, ...folderStack, currentFolder];
+  // Build breadcrumb path (avoid duplicate 'My Drive')
+  const path = [];
+  if (currentFolder.id !== 'root') {
+    path.push({ id: 'root', name: 'My Drive' });
+  }
+  path.push(...folderStack);
+  path.push(currentFolder);
 
   return (
     <Box>
       {/* Top toolbar */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
-        {folderStack.length > 0 && (
-          <Button variant="outlined" onClick={() => { goBack(); setPage(0); setPageTokens(['']); fetchFiles(); }}>
+        {(folderStack.length > 0 || currentFolder.id !== 'root') && (
+          <Button
+            variant="outlined"
+            onClick={() => {
+              goBack();
+              setPage(0);
+              setPageTokens(['']);
+              fetchFiles();
+            }}
+          >
             Back
           </Button>
         )}
@@ -145,7 +159,7 @@ function DriveFilesContainer({ reloadFlag }) {
       <UploadModal
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
-        folderId={currentFolder.id} 
+        folderId={currentFolder.id}
         onUploadSuccess={() => {
           fetchFiles(null, currentFolder.id);
           setUploadOpen(false);
