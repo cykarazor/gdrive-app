@@ -8,6 +8,7 @@ import {
   Box,
   Breadcrumbs,
   Link,
+  Button,
   Typography,
 } from "@mui/material";
 import Header from "../Header";
@@ -24,7 +25,7 @@ export default function MainLayout({ children, onReloadFiles }) {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
 
-  const { currentFolder, folderStack, goToBreadcrumb } = useCurrentFolder();
+  const { currentFolder, folderStack, goBack, goToBreadcrumb } = useCurrentFolder();
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
   const handleUploadClick = () => setUploadModalOpen(true);
@@ -54,7 +55,7 @@ export default function MainLayout({ children, onReloadFiles }) {
   );
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Header onMenuClick={handleDrawerToggle} />
 
       {/* Permanent drawer on desktop */}
@@ -97,46 +98,67 @@ export default function MainLayout({ children, onReloadFiles }) {
       <Box
         component="main"
         sx={{
-          ml: { sm: `${drawerWidth}px` }, // shift main content for desktop drawer
-          mt: `${headerHeight}px`,
-          pb: "80px",
-          boxSizing: "border-box",
-          p: 2,
           flexGrow: 1,
+          ml: { sm: `${drawerWidth}px` }, // shift content but NOT footer
+          mt: `${headerHeight}px`,
+          p: 2,
         }}
       >
-        {/* Breadcrumbs */}
-        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-          {/* Non-clickable root */}
-          <Typography color="text.primary">My Drive</Typography>
-
-          {/* Folder stack breadcrumbs */}
-          {folderStack.map((folder, idx) => (
+        {/* Top toolbar with Back button */}
+        <Box sx={{ display: "flex", alignItems: "center", mb: 1, gap: 2 }}>
+          {folderStack.length > 0 && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                goBack();
+                if (typeof onReloadFiles === "function") onReloadFiles();
+              }}
+            >
+              Back
+            </Button>
+          )}
+          <Breadcrumbs aria-label="breadcrumb">
             <Link
-              key={folder.id}
               underline="hover"
               color="inherit"
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                goToBreadcrumb(idx);
+                // Go to root
+                goToBreadcrumb(-1); // -1 to reset to root
+                if (typeof onReloadFiles === "function") onReloadFiles();
               }}
             >
-              {folder.name}
+              My Drive
             </Link>
-          ))}
 
-          {/* Current folder */}
-          {currentFolder.name !== "My Drive" && (
-            <Typography color="text.primary">{currentFolder.name}</Typography>
-          )}
-        </Breadcrumbs>
+            {folderStack.map((folder, idx) => (
+              <Link
+                key={folder.id}
+                underline="hover"
+                color="inherit"
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  goToBreadcrumb(idx);
+                  if (typeof onReloadFiles === "function") onReloadFiles();
+                }}
+              >
+                {folder.name}
+              </Link>
+            ))}
+
+            {currentFolder.name !== "My Drive" && (
+              <Typography color="text.primary">{currentFolder.name}</Typography>
+            )}
+          </Breadcrumbs>
+        </Box>
 
         {children}
       </Box>
 
       {/* Footer spans full width */}
-      <Box component="footer" sx={{ width: "100%", mt: "auto" }}>
+      <Box component="footer" sx={{ width: "100%" }}>
         <Footer />
       </Box>
 
