@@ -4,7 +4,7 @@ import axios from 'axios';
 import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
 import { Button, Box, Typography } from '@mui/material';
-import UploadModal from '../modals/UploadModal';
+import UploadModal from './modals/UploadModal';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
