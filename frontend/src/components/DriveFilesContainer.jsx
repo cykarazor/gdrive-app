@@ -18,18 +18,16 @@ function DriveFilesContainer({ reloadFlag }) {
   // Pagination state
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(0);
-
-  // Drive API pagination token
   const [nextPageToken, setNextPageToken] = useState(null);
   const [pageTokens, setPageTokens] = useState(['']);
 
-  // Context: current folder & folder stack
+  // Context
   const { currentFolder, folderStack, goToFolder, goBack, goToBreadcrumb } = useCurrentFolder();
 
-  // Upload modal state
+  // Upload modal
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  // Fetch files
+  // Fetch files helper
   const fetchFiles = useCallback(
     async (token = null, folderIdParam = currentFolder.id) => {
       setLoading(true);
@@ -60,9 +58,9 @@ function DriveFilesContainer({ reloadFlag }) {
     setPage(0);
     setPageTokens(['']);
     fetchFiles(null);
-  }, [fetchFiles, reloadFlag]);
+  }, [fetchFiles, reloadFlag, currentFolder.id]); // NEW: added currentFolder.id so files reload on folder change
 
-  // Pagination handlers
+  // Pagination
   const handlePageChange = (_event, newPage) => {
     if (newPage > page && nextPageToken) {
       fetchFiles(nextPageToken);
@@ -94,21 +92,17 @@ function DriveFilesContainer({ reloadFlag }) {
     setPageTokens(['']);
   };
 
-  // Folder click: navigate into folder
+  // Folder click
   const handleFolderClick = (folderId, folderName) => {
     goToFolder({ id: folderId, name: folderName });
-    setPage(0);
-    setPageTokens(['']);
-    fetchFiles(null, folderId);
+    // fetchFiles(null, folderId); // ❌ removed direct call — would use stale folder state
   };
 
-  // Build breadcrumb path (avoid duplicate 'My Drive')
-  const path = [];
+  // Build breadcrumb path
+  const path = [{ id: 'root', name: 'My Drive' }]; // Always start with root
   if (currentFolder.id !== 'root') {
-    path.push({ id: 'root', name: 'My Drive' });
+    path.push(...folderStack, currentFolder);
   }
-  path.push(...folderStack);
-  path.push(currentFolder);
 
   return (
     <Box>
@@ -119,9 +113,7 @@ function DriveFilesContainer({ reloadFlag }) {
             variant="outlined"
             onClick={() => {
               goBack();
-              setPage(0);
-              setPageTokens(['']);
-              fetchFiles();
+              // fetchFiles(); // ❌ removed direct call — will refetch via useEffect when currentFolder changes
             }}
           >
             Back
@@ -139,9 +131,7 @@ function DriveFilesContainer({ reloadFlag }) {
                 e.preventDefault();
                 if (idx !== path.length - 1) {
                   goToBreadcrumb(idx);
-                  setPage(0);
-                  setPageTokens(['']);
-                  fetchFiles(path[idx].id);
+                  // fetchFiles(path[idx].id); // ❌ removed direct call — will trigger via useEffect
                 }
               }}
             >
