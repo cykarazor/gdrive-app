@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
-import { Button, Box, Breadcrumbs, Link } from '@mui/material';
+import { Button, Box, Breadcrumbs, Link, Stack } from '@mui/material';
 import UploadModal from './modals/UploadModal';
 import CreateFolderModal from './modals/CreateFolderModal';
 import { useCurrentFolder } from '../context/CurrentFolderContext';
@@ -94,57 +94,79 @@ function DriveFilesContainer({ reloadFlag }) {
   };
 
   const path = [{ id: 'root', name: 'My Drive' }];
-  if (currentFolder.id !== 'root') {
-    path.push(...folderStack, currentFolder);
-  }
+  if (currentFolder.id !== 'root') path.push(...folderStack, currentFolder);
 
   return (
     <Box>
-      {/* Top toolbar */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
-        {(folderStack.length > 0 || currentFolder.id !== 'root') && (
-          <Button variant="outlined" size="small" onClick={() => goBack()}>
-            Back
-          </Button>
-        )}
-
-        <Breadcrumbs aria-label="breadcrumb" sx={{ flexGrow: 1 }}>
-          {path.map((folder, idx) => (
-            <Link
-              key={folder.id}
-              underline={idx === path.length - 1 ? 'none' : 'hover'}
-              color={idx === path.length - 1 ? 'text.primary' : 'inherit'}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                if (idx !== path.length - 1) goToBreadcrumb(idx);
-              }}
+      {/* Responsive top toolbar */}
+      <Box sx={{ mb: 2 }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+        >
+          {/* Breadcrumbs + Back */}
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+            {(folderStack.length > 0 || currentFolder.id !== 'root') && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => goBack()}
+              >
+                Back
+              </Button>
+            )}
+            <Breadcrumbs
+              aria-label="breadcrumb"
+              sx={{ flexGrow: 1, minWidth: 0 }}
             >
-              {folder.name}
-            </Link>
-          ))}
-        </Breadcrumbs>
+              {path.map((folder, idx) => (
+                <Link
+                  key={folder.id}
+                  underline={idx === path.length - 1 ? 'none' : 'hover'}
+                  color={idx === path.length - 1 ? 'text.primary' : 'inherit'}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (idx !== path.length - 1) goToBreadcrumb(idx);
+                  }}
+                  sx={{
+                    maxWidth: 100,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    display: 'inline-block',
+                  }}
+                >
+                  {folder.name}
+                </Link>
+              ))}
+            </Breadcrumbs>
+          </Stack>
 
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<CloudUploadIcon />}
-            onClick={() => setUploadOpen(true)}
-          >
-            Upload
-          </Button>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<CreateNewFolderIcon />}
-            onClick={() => setCreateFolderOpen(true)}
-          >
-            Create Folder
-          </Button>
-        </Box>
+          {/* Action buttons */}
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<CloudUploadIcon />}
+              onClick={() => setUploadOpen(true)}
+            >
+              Upload
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<CreateNewFolderIcon />}
+              onClick={() => setCreateFolderOpen(true)}
+            >
+              Create Folder
+            </Button>
+          </Box>
+        </Stack>
       </Box>
 
+      {/* Upload Modal */}
       <UploadModal
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
@@ -155,6 +177,7 @@ function DriveFilesContainer({ reloadFlag }) {
         }}
       />
 
+      {/* Create Folder Modal */}
       <CreateFolderModal
         open={createFolderOpen}
         onClose={() => setCreateFolderOpen(false)}
