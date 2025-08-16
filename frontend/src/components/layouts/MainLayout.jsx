@@ -105,7 +105,15 @@ export default function MainLayout({ children, onReloadFiles }) {
       </Box>
 
       {/* Footer */}
-      <Box component="footer" sx={{ mt: "auto", width: "100%" }}>
+      <Box
+        component="footer"
+        sx={{
+          mt: "auto",
+          ml: { sm: `${drawerWidth}px` }, // align with main content on desktop
+          p: 2,
+          backgroundColor: "background.paper", // optional: matches content background
+        }}
+      >
         <Footer />
       </Box>
 
