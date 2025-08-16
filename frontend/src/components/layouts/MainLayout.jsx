@@ -100,16 +100,7 @@ export default function MainLayout({ children, onReloadFiles }) {
           p: 2,
         }}
       >
-        {/* Optional top toolbar for Upload / Create Folder */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-          <Button variant="contained" onClick={handleUploadClick}>
-            Upload
-          </Button>
-          <Button variant="contained" onClick={handleCreateFolderClick}>
-            Create Folder
-          </Button>
-        </Box>
-
+        
         {children}
       </Box>
 
