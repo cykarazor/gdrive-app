@@ -1,3 +1,4 @@
+//frontend/src/components/DriveFilesContainer.jsx
 import { useState } from 'react';
 import { Box } from '@mui/material';
 import { useCurrentFolder } from '../context/CurrentFolderContext';
@@ -9,7 +10,7 @@ import CreateFolderModal from './modals/CreateFolderModal';
 import useDriveFiles from '../hooks/useDriveFiles';
 
 export default function DriveFilesContainer({ reloadFlag }) {
-  const { currentFolder, folderStack, goBack, goToBreadcrumb } = useCurrentFolder();
+  const { currentFolder, folderStack, goBack, goToBreadcrumb, goToFolder } = useCurrentFolder();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
 
@@ -25,6 +26,11 @@ export default function DriveFilesContainer({ reloadFlag }) {
     handleRowsPerPageChange,
     handleSortChange,
   } = useDriveFiles(currentFolder, reloadFlag);
+
+  // Folder click handler
+  const handleFolderClick = (folderId, folderName) => {
+    goToFolder({ id: folderId, name: folderName });
+  };
 
   return (
     <Box>
@@ -63,6 +69,7 @@ export default function DriveFilesContainer({ reloadFlag }) {
         orderBy={orderBy}
         order={order}
         onSortChange={handleSortChange}
+        onFolderClick={handleFolderClick} // ✅ restored
       />
 
       <PaginationControl
