@@ -6,6 +6,8 @@ import { Button, Box, Breadcrumbs, Link } from '@mui/material';
 import UploadModal from './modals/UploadModal';
 import CreateFolderModal from './modals/CreateFolderModal';
 import { useCurrentFolder } from '../context/CurrentFolderContext';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -15,22 +17,16 @@ function DriveFilesContainer({ reloadFlag }) {
   const [orderBy, setOrderBy] = useState('modifiedTime');
   const [order, setOrder] = useState('desc');
 
-  // Pagination state
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(0);
   const [nextPageToken, setNextPageToken] = useState(null);
   const [pageTokens, setPageTokens] = useState(['']);
 
-  // Context
   const { currentFolder, folderStack, goToFolder, goBack, goToBreadcrumb } = useCurrentFolder();
 
-  // Upload modal
   const [uploadOpen, setUploadOpen] = useState(false);
-
-  // Create folder modal
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
 
-  // Fetch files helper
   const fetchFiles = useCallback(
     async (token = null, folderIdParam = currentFolder.id) => {
       setLoading(true);
@@ -56,14 +52,12 @@ function DriveFilesContainer({ reloadFlag }) {
     [rowsPerPage, orderBy, order, currentFolder.id]
   );
 
-  // Initial load & reload
   useEffect(() => {
     setPage(0);
     setPageTokens(['']);
     fetchFiles(null);
-  }, [fetchFiles, reloadFlag, currentFolder.id]); // ✅ reload on folder change
+  }, [fetchFiles, reloadFlag, currentFolder.id]);
 
-  // Pagination
   const handlePageChange = (_event, newPage) => {
     if (newPage > page && nextPageToken) {
       fetchFiles(nextPageToken);
@@ -95,13 +89,10 @@ function DriveFilesContainer({ reloadFlag }) {
     setPageTokens(['']);
   };
 
-  // Folder click
   const handleFolderClick = (folderId, folderName) => {
     goToFolder({ id: folderId, name: folderName });
-    // fetchFiles(null, folderId); // ❌ removed direct call — useEffect reloads on folder change
   };
 
-  // Build breadcrumb path
   const path = [{ id: 'root', name: 'My Drive' }];
   if (currentFolder.id !== 'root') {
     path.push(...folderStack, currentFolder);
@@ -112,13 +103,7 @@ function DriveFilesContainer({ reloadFlag }) {
       {/* Top toolbar */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
         {(folderStack.length > 0 || currentFolder.id !== 'root') && (
-          <Button
-            variant="outlined"
-            onClick={() => {
-              goBack();
-              // fetchFiles(); // ❌ removed direct call — reload triggers via useEffect
-            }}
-          >
+          <Button variant="outlined" size="small" onClick={() => goBack()}>
             Back
           </Button>
         )}
@@ -132,10 +117,7 @@ function DriveFilesContainer({ reloadFlag }) {
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                if (idx !== path.length - 1) {
-                  goToBreadcrumb(idx);
-                  // fetchFiles(path[idx].id); // ❌ useEffect will reload
-                }
+                if (idx !== path.length - 1) goToBreadcrumb(idx);
               }}
             >
               {folder.name}
@@ -143,18 +125,26 @@ function DriveFilesContainer({ reloadFlag }) {
           ))}
         </Breadcrumbs>
 
-        {/* Upload Button */}
-        <Button variant="contained" onClick={() => setUploadOpen(true)}>
-          Upload
-        </Button>
-
-        {/* Create Folder Button */}
-        <Button variant="contained" onClick={() => setCreateFolderOpen(true)}>
-          Create Folder
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<CloudUploadIcon />}
+            onClick={() => setUploadOpen(true)}
+          >
+            Upload
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<CreateNewFolderIcon />}
+            onClick={() => setCreateFolderOpen(true)}
+          >
+            Create Folder
+          </Button>
+        </Box>
       </Box>
 
-      {/* Upload Modal */}
       <UploadModal
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
@@ -165,11 +155,10 @@ function DriveFilesContainer({ reloadFlag }) {
         }}
       />
 
-      {/* Create Folder Modal */}
       <CreateFolderModal
         open={createFolderOpen}
         onClose={() => setCreateFolderOpen(false)}
-        folderId={currentFolder.id} // ✅ creates folder in current folder
+        folderId={currentFolder.id}
         onCreateSuccess={() => {
           fetchFiles(null, currentFolder.id);
           setCreateFolderOpen(false);
