@@ -1,172 +1,42 @@
-import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
+import { Box } from '@mui/material';
+import { useCurrentFolder } from '../context/CurrentFolderContext';
+import DriveToolbar from './DriveToolbar';
 import DriveFilesList from './DriveFilesList';
 import PaginationControl from './PaginationControls';
-import { Button, Box, Breadcrumbs, Link, Stack } from '@mui/material';
 import UploadModal from './modals/UploadModal';
 import CreateFolderModal from './modals/CreateFolderModal';
-import { useCurrentFolder } from '../context/CurrentFolderContext';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
+import useDriveFiles from '../hooks/useDriveFiles';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-function DriveFilesContainer({ reloadFlag }) {
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [orderBy, setOrderBy] = useState('modifiedTime');
-  const [order, setOrder] = useState('desc');
-
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [page, setPage] = useState(0);
-  const [nextPageToken, setNextPageToken] = useState(null);
-  const [pageTokens, setPageTokens] = useState(['']);
-
-  const { currentFolder, folderStack, goToFolder, goBack, goToBreadcrumb } = useCurrentFolder();
-
+export default function DriveFilesContainer({ reloadFlag }) {
+  const { currentFolder, folderStack, goBack, goToBreadcrumb } = useCurrentFolder();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
 
-  const fetchFiles = useCallback(
-    async (token = null, folderIdParam = currentFolder.id) => {
-      setLoading(true);
-      try {
-        const params = {
-          pageSize: rowsPerPage,
-          orderBy: `${orderBy} ${order}`,
-          folderId: folderIdParam,
-        };
-        if (token) params.pageToken = token;
-
-        const res = await axios.get(`${API_BASE_URL}/api/drive/files`, { params });
-        setFiles(res.data.files || []);
-        setNextPageToken(res.data.nextPageToken || null);
-      } catch (err) {
-        console.error('Failed to fetch files:', err);
-        setFiles([]);
-        setNextPageToken(null);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [rowsPerPage, orderBy, order, currentFolder.id]
-  );
-
-  useEffect(() => {
-    setPage(0);
-    setPageTokens(['']);
-    fetchFiles(null);
-  }, [fetchFiles, reloadFlag, currentFolder.id]);
-
-  const handlePageChange = (_event, newPage) => {
-    if (newPage > page && nextPageToken) {
-      fetchFiles(nextPageToken);
-      setPage(newPage);
-      const newTokens = [...pageTokens];
-      newTokens[newPage] = nextPageToken;
-      setPageTokens(newTokens);
-    } else if (newPage < page) {
-      const prevToken = pageTokens[newPage];
-      fetchFiles(prevToken || null);
-      setPage(newPage);
-    }
-  };
-
-  const handleRowsPerPageChange = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-    setPageTokens(['']);
-  };
-
-  const handleSortChange = (property) => {
-    if (orderBy === property) {
-      setOrder(order === 'asc' ? 'desc' : 'asc');
-    } else {
-      setOrderBy(property);
-      setOrder('asc');
-    }
-    setPage(0);
-    setPageTokens(['']);
-  };
-
-  const handleFolderClick = (folderId, folderName) => {
-    goToFolder({ id: folderId, name: folderName });
-  };
-
-  const path = [{ id: 'root', name: 'My Drive' }];
-  if (currentFolder.id !== 'root') path.push(...folderStack, currentFolder);
+  const {
+    files,
+    loading,
+    orderBy,
+    order,
+    page,
+    rowsPerPage,
+    fetchFiles,
+    handlePageChange,
+    handleRowsPerPageChange,
+    handleSortChange,
+  } = useDriveFiles(currentFolder, reloadFlag);
 
   return (
     <Box>
-      {/* Responsive top toolbar */}
-      <Box sx={{ mb: 2 }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
-          alignItems={{ xs: 'stretch', sm: 'center' }}
-        >
-          {/* Breadcrumbs + Back */}
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-            {(folderStack.length > 0 || currentFolder.id !== 'root') && (
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => goBack()}
-              >
-                Back
-              </Button>
-            )}
-            <Breadcrumbs
-              aria-label="breadcrumb"
-              sx={{ flexGrow: 1, minWidth: 0 }}
-            >
-              {path.map((folder, idx) => (
-                <Link
-                  key={folder.id}
-                  underline={idx === path.length - 1 ? 'none' : 'hover'}
-                  color={idx === path.length - 1 ? 'text.primary' : 'inherit'}
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (idx !== path.length - 1) goToBreadcrumb(idx);
-                  }}
-                  sx={{
-                    maxWidth: 100,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'inline-block',
-                  }}
-                >
-                  {folder.name}
-                </Link>
-              ))}
-            </Breadcrumbs>
-          </Stack>
+      <DriveToolbar
+        folderStack={folderStack}
+        currentFolder={currentFolder}
+        goBack={goBack}
+        goToBreadcrumb={goToBreadcrumb}
+        onUploadClick={() => setUploadOpen(true)}
+        onCreateFolderClick={() => setCreateFolderOpen(true)}
+      />
 
-          {/* Action buttons */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<CloudUploadIcon />}
-              onClick={() => setUploadOpen(true)}
-            >
-              Upload
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<CreateNewFolderIcon />}
-              onClick={() => setCreateFolderOpen(true)}
-            >
-              Create Folder
-            </Button>
-          </Box>
-        </Stack>
-      </Box>
-
-      {/* Upload Modal */}
       <UploadModal
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
@@ -177,7 +47,6 @@ function DriveFilesContainer({ reloadFlag }) {
         }}
       />
 
-      {/* Create Folder Modal */}
       <CreateFolderModal
         open={createFolderOpen}
         onClose={() => setCreateFolderOpen(false)}
@@ -194,7 +63,6 @@ function DriveFilesContainer({ reloadFlag }) {
         orderBy={orderBy}
         order={order}
         onSortChange={handleSortChange}
-        onFolderClick={handleFolderClick}
       />
 
       <PaginationControl
@@ -209,5 +77,3 @@ function DriveFilesContainer({ reloadFlag }) {
     </Box>
   );
 }
-
-export default DriveFilesContainer;
