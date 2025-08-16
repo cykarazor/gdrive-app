@@ -100,7 +100,6 @@ export default function MainLayout({ children, onReloadFiles }) {
           p: 2,
         }}
       >
-        
         {children}
       </Box>
 
@@ -110,8 +109,7 @@ export default function MainLayout({ children, onReloadFiles }) {
         sx={{
           mt: "auto",
           ml: { sm: `${drawerWidth}px` }, // align with main content on desktop
-          p: 2,
-          backgroundColor: "background.paper", // optional: matches content background
+          width: { xs: "100%", sm: `calc(100% - ${drawerWidth}px)` }, // match main content width
         }}
       >
         <Footer />
