@@ -1,6 +1,8 @@
 // backend/routes/drive/createFolder.js
+const express = require('express');
+
 module.exports = (driveSvc) => {
-  const router = require('express').Router();
+  const router = express.Router();
   const authErrorPayload = {
     error: 'TokenExpired',
     message: 'Your Google Drive token has expired. Please reauthorize.',

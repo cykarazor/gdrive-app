@@ -1,11 +1,13 @@
 // backend/routes/drive/uploadFile.js
+const express = require('express');
+
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const upload = multer({ dest: path.join(__dirname, '..', '..', 'uploads') });
 
 module.exports = (driveSvc) => {
-  const router = require('express').Router();
+  const router = express.Router();
 
   const authErrorPayload = {
     error: 'TokenExpired',
