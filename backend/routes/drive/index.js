@@ -16,7 +16,7 @@ const moveFile = require('./moveFile')(driveSvc);
 const getFileMetadata = require('./getFileMetadata')(driveSvc);
 const downloadFile = require('./downloadFile')(driveSvc);
 
-// Mount route modules with unique paths
+// Mount route modules
 router.use('/test', testRoute);
 router.use('/upload', uploadFile);
 router.use('/files', listFiles);
