@@ -1,3 +1,4 @@
+// backend/routes/drive/index.js
 const express = require('express');
 const createDriveService = require('../../services/googleDriveService');
 const authClient = require('./_authClient');
@@ -15,14 +16,14 @@ const moveFile = require('./moveFile')(driveSvc);
 const getFileMetadata = require('./getFileMetadata')(driveSvc);
 const downloadFile = require('./downloadFile')(driveSvc);
 
-// Mount route modules
+// Mount route modules with unique paths
 router.use('/test', testRoute);
 router.use('/upload', uploadFile);
 router.use('/files', listFiles);
 router.use('/folder', createFolder);
-router.use('/file/:id', deleteFile);
+router.use('/file/:id/delete', deleteFile);
 router.use('/file/:id/move', moveFile);
-router.use('/file/:id', getFileMetadata);
+router.use('/file/:id/metadata', getFileMetadata);
 router.use('/file/:id/download', downloadFile);
 
 module.exports = router;
