@@ -49,7 +49,7 @@ const oAuth2Client = getOAuth2Client();
   app.use('/', authRoutes);
 
   // 2. Pass auth to drive router
-  const driveRoutes = require('./routes/drive')(oAuth2Client);
+  const driveRoutes = require('./routes/drive/index')(oAuth2Client);
   app.use('/api/drive', driveRoutes);
 
   // 3. Start server
