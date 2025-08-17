@@ -11,7 +11,9 @@ module.exports = function (auth) {
   const router = express.Router();
   const driveSvc = createDriveService(auth);
 
-  // Helper to detect auth errors
+  // -------------------------
+  // Helper functions
+  // -------------------------
   const isAuthError = (err) =>
     err?.code === 401 ||
     err?.status === 401 ||
@@ -25,23 +27,35 @@ module.exports = function (auth) {
     authUrl: '/auth/google',
   };
 
-  // Test connection route
+  const handleError = (res, err, fallbackMessage) => {
+    console.error(fallbackMessage, err);
+    if (isAuthError(err)) return res.status(401).json(authErrorPayload);
+    res.status(500).json({ message: fallbackMessage });
+  };
+
+  const safeUnlink = (filePath) => {
+    try { fs.unlinkSync(filePath); } catch {}
+  };
+
+  // -------------------------
+  // Routes
+  // -------------------------
+
+  // Test connection
   router.get('/test', async (req, res) => {
     try {
       const { files } = await driveSvc.listFiles({ pageSize: 1 });
       res.json({ ok: true, sample: files[0] || null });
     } catch (err) {
-      console.error(err);
-      res.status(500).send('Drive API test failed');
+      handleError(res, err, 'Drive API test failed');
     }
   });
 
-  // Upload route
+  // Upload file
   router.post('/upload', upload.single('file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'file is required' });
 
     const tempPath = req.file.path;
-
     try {
       const folderId = req.body.folderId || 'root';
       const data = await driveSvc.uploadFile({
@@ -57,15 +71,13 @@ module.exports = function (auth) {
         parents: data.parents,
       });
     } catch (err) {
-      console.error('Upload failed:', err);
-      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
-      res.status(500).json({ message: 'Upload failed' });
+      handleError(res, err, 'Upload failed');
     } finally {
-      try { fs.unlinkSync(tempPath); } catch {}
+      safeUnlink(tempPath);
     }
   });
 
-  // List files (root or inside folder)
+  // List files
   router.get('/files', async (req, res) => {
     try {
       const { folderId = 'root', pageSize = 10, pageToken = null, orderBy } = req.query;
@@ -77,9 +89,7 @@ module.exports = function (auth) {
       });
       res.json(data);
     } catch (err) {
-      console.error('List failed:', err);
-      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
-      res.status(500).json({ message: 'Failed to list files' });
+      handleError(res, err, 'Failed to list files');
     }
   });
 
@@ -87,14 +97,11 @@ module.exports = function (auth) {
   router.post('/folder', async (req, res) => {
     try {
       const { name, parentId = 'root' } = req.body || {};
-      if (!name || !name.trim()) return res.status(400).json({ message: 'Folder name is required' });
-
+      if (!name?.trim()) return res.status(400).json({ message: 'Folder name is required' });
       const data = await driveSvc.createFolder({ name, parentId });
       res.json({ id: data.id, name: data.name, parents: data.parents });
     } catch (err) {
-      console.error('Create folder failed:', err);
-      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
-      res.status(500).json({ message: 'Failed to create folder' });
+      handleError(res, err, 'Failed to create folder');
     }
   });
 
@@ -104,9 +111,7 @@ module.exports = function (auth) {
       await driveSvc.deleteFile(req.params.id);
       res.json({ success: true });
     } catch (err) {
-      console.error('Delete failed:', err);
-      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
-      res.status(500).json({ message: 'Failed to delete file' });
+      handleError(res, err, 'Failed to delete file');
     }
   });
 
@@ -115,13 +120,10 @@ module.exports = function (auth) {
     try {
       const { newParentId } = req.body || {};
       if (!newParentId) return res.status(400).json({ message: 'newParentId is required' });
-
       const data = await driveSvc.moveFile({ fileId: req.params.id, newParentId });
       res.json({ id: data.id, parents: data.parents });
     } catch (err) {
-      console.error('Move failed:', err);
-      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
-      res.status(500).json({ message: 'Failed to move file' });
+      handleError(res, err, 'Failed to move file');
     }
   });
 
@@ -131,9 +133,7 @@ module.exports = function (auth) {
       const data = await driveSvc.getFileMetadata(req.params.id);
       res.json(data);
     } catch (err) {
-      console.error('Get metadata failed:', err);
-      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
-      res.status(500).json({ message: 'Failed to get file metadata' });
+      handleError(res, err, 'Failed to get file metadata');
     }
   });
 
@@ -153,9 +153,7 @@ module.exports = function (auth) {
 
       stream.pipe(res);
     } catch (err) {
-      console.error('Download failed:', err);
-      if (isAuthError(err)) return res.status(401).json(authErrorPayload);
-      res.status(500).json({ message: 'Failed to download file' });
+      handleError(res, err, 'Failed to download file');
     }
   });
 
