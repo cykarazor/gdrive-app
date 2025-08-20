@@ -70,6 +70,7 @@ export default function DriveFilesContainer({ reloadFlag }) {
         order={order}
         onSortChange={handleSortChange}
         onFolderClick={handleFolderClick} // ✅ restored
+        onDeleteFile={() => fetchFiles(null, currentFolder.id)} // NEW: refresh files after delete
       />
 
       <PaginationControl

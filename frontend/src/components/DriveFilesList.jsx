@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 
 import DriveLoadingPremium from './DriveLoadingPremium';
+import DeleteFileButton from './DeleteFileButton'; // NEW: Import Delete button
 
 // MUI Icons
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -48,7 +49,8 @@ function DriveFilesList({
   orderBy,
   order,
   onSortChange,
-  onFolderClick, // NEW
+  onFolderClick, // NEW: folder click handler
+  onDeleteFile,  // NEW: callback when a file is deleted
 }) {
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden', p: 2 }}>
@@ -96,6 +98,9 @@ function DriveFilesList({
                     Modified
                   </TableSortLabel>
                 </TableCell>
+
+                {/* NEW: Actions column for Delete button */}
+                <TableCell sx={{ minWidth: 100 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
 
@@ -110,7 +115,7 @@ function DriveFilesList({
                         // Folder name is clickable to open folder
                         <Typography
                           sx={{ cursor: 'pointer', color: 'primary.main' }}
-                          onClick={() => onFolderClick?.(file.id, file.name)} // call handler with folderId
+                          onClick={() => onFolderClick?.(file.id, file.name)}
                         >
                           {file.name}
                         </Typography>
@@ -124,6 +129,15 @@ function DriveFilesList({
 
                   <TableCell>
                     {file.modifiedTime ? new Date(file.modifiedTime).toLocaleString() : '-'}
+                  </TableCell>
+
+                  {/* NEW: Delete button */}
+                  <TableCell>
+                    <DeleteFileButton
+                      fileId={file.id}
+                      fileName={file.name}
+                      onDeleted={onDeleteFile} // calls parent refresh
+                    />
                   </TableCell>
                 </TableRow>
               ))}
