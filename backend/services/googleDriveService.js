@@ -128,6 +128,17 @@ module.exports = function createDriveService(auth) {
     return res.data; // stream
   }
 
+  //Rename a file or folder
+  async function renameFile({ fileId, newName }) {
+  const res = await drive.files.update({
+    fileId,
+    requestBody: { name: newName },
+    fields: 'id, name',
+    supportsAllDrives: true,
+  });
+  return res.data;
+}
+
   return {
     listFiles,
     listAllFoldersRecursive,
@@ -137,5 +148,6 @@ module.exports = function createDriveService(auth) {
     moveFile,
     getFileMetadata,
     downloadFile,
+    renameFile,
   };
 };

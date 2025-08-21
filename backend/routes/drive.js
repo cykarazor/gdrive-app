@@ -134,8 +134,6 @@ router.delete('/file/:id', async (req, res) => {
   }
 });
 
-  // Rename file/folder
-
   // Move file/folder
   router.patch('/file/:id/move', async (req, res) => {
     try {
@@ -147,6 +145,27 @@ router.delete('/file/:id', async (req, res) => {
       handleError(res, err, 'Failed to move file');
     }
   });
+
+  // Rename file/folder
+router.patch('/file/:id/rename', async (req, res) => {
+  try {
+    const { newName } = req.body || {};
+    if (!newName?.trim()) return res.status(400).json({ message: 'New name is required' });
+
+    const data = await driveSvc.renameFile({
+      fileId: req.params.id,
+      newName: newName.trim(),
+    });
+
+    res.json({
+      success: true,
+      id: data.id,
+      name: data.name,
+    });
+  } catch (err) {
+    handleError(res, err, 'Failed to rename file/folder');
+  }
+});
 
   // Get file metadata
   router.get('/file/:id', async (req, res) => {
