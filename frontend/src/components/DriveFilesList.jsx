@@ -8,6 +8,7 @@ import {
 
 import DriveLoadingPremium from './DriveLoadingPremium';
 import DeleteFileButton from './DeleteFileButton'; // NEW: Import Delete button
+import MoveFileButton from './MoveFileButton'; // NEW
 
 // MUI Icons
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -100,7 +101,21 @@ function DriveFilesList({
                 </TableCell>
 
                 {/* NEW: Actions column for Delete button */}
-                <TableCell sx={{ minWidth: 100 }}>Actions</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <MoveFileButton
+                      fileId={file.id}
+                      fileName={file.name}
+                      currentFolderId={currentFolder?.id} // pass current folder context
+                      onMoved={onDeleteFile} // reuse callback to refresh file list
+                    />
+                    <DeleteFileButton
+                      fileId={file.id}
+                      fileName={file.name}
+                      onDeleted={onDeleteFile}
+                    />
+                  </Box>
+                </TableCell>
               </TableRow>
             </TableHead>
 
