@@ -93,6 +93,16 @@ module.exports = function (auth) {
     }
   });
 
+  // List all folders recursively
+router.get('/folders/all', async (req, res) => {
+  try {
+    const folders = await driveSvc.listAllFoldersRecursive('root');
+    res.json({ folders });
+  } catch (err) {
+    handleError(res, err, 'Failed to list all folders');
+  }
+});
+
   // Create folder
   router.post('/folder', async (req, res) => {
     try {

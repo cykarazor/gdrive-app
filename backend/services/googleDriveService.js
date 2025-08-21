@@ -18,6 +18,34 @@ module.exports = function createDriveService(auth) {
     return { files: res.data.files || [], nextPageToken: res.data.nextPageToken || null };
   }
 
+  async function listAllFoldersRecursive(parentId = 'root', path = '') {
+  let allFolders = [];
+
+  // List only folders inside the given parent
+  const res = await drive.files.list({
+    q: `'${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: 'files(id, name)',
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+  });
+
+  for (const folder of res.data.files || []) {
+    const fullPath = path ? `${path}/${folder.name}` : folder.name;
+
+    allFolders.push({
+      id: folder.id,
+      name: folder.name,
+      path: fullPath, // "Root/Subfolder/Subsubfolder"
+    });
+
+    // Recursive call: get subfolders of this folder
+    const subfolders = await listAllFoldersRecursive(folder.id, fullPath);
+    allFolders = allFolders.concat(subfolders);
+  }
+
+  return allFolders;
+}
+
   async function uploadFile({ tempPath, originalName, mimeType, folderId = 'root' }) {
     const fileMetadata = {
       name: originalName,
@@ -102,6 +130,7 @@ module.exports = function createDriveService(auth) {
 
   return {
     listFiles,
+    listAllFoldersRecursive,
     uploadFile,
     createFolder,
     deleteFile,
