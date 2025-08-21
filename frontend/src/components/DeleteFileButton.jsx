@@ -28,9 +28,9 @@ export default function DeleteFileButton({ fileId, fileName, onDeleted }) {
 
       // 🔹 Add console logs for debugging
       console.log("🟡 Delete requested for:", { fileId, fileName });
-      console.log("🟡 Request URL:", `${API_BASE_URL}/drive/file/${fileId}`);
+      console.log("🟡 Request URL:", `${API_BASE_URL}/api/drive/file/${fileId}`);
 
-      const res = await axios.delete(`${API_BASE_URL}/drive/file/${fileId}`);
+      const res = await axios.delete(`${API_BASE_URL}/api/drive/file/${fileId}`);
 
       console.log("🟢 Delete response:", res.data); // ✅ log backend response
 
