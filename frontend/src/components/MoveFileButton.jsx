@@ -14,80 +14,60 @@ import {
   Select,
   FormControl,
   InputLabel,
-  Typography,
 } from "@mui/material";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
-import FolderIcon from "@mui/icons-material/Folder";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-// Helper: build tree from flat folder list
-const buildFolderTree = (folders) => {
-  const map = {};
-  folders.forEach(f => map[f.id] = { ...f, children: [] });
-  const tree = [];
-  folders.forEach(f => {
-    if (f.parents?.length && f.parents[0] !== "root" && map[f.parents[0]]) {
-      map[f.parents[0]].children.push(map[f.id]);
-    } else {
-      tree.push(map[f.id]);
-    }
-  });
-  return tree;
-};
-
-// Helper: flatten tree with visual path and level
-const flattenTreeWithPath = (nodes, pathPrefix = "", level = 0) =>
-  nodes.flatMap(node => {
-    const displayPath = pathPrefix ? `${pathPrefix} |_ ${node.name}` : node.name;
-    return [
-      { id: node.id, name: displayPath, level },
-      ...flattenTreeWithPath(node.children || [], displayPath, level + 1),
-    ];
-  });
 
 export default function MoveFileButton({ fileId, fileName, currentFolderId, onMoved }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [folders, setFolders] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState("");
-  const [fetchingFolders, setFetchingFolders] = useState(false);
 
+  // Open/close handlers
   const handleOpen = () => {
     setSelectedFolder("");
     setOpen(true);
   };
   const handleClose = () => setOpen(false);
 
+  // Fetch all folders
   useEffect(() => {
     const fetchFolders = async () => {
-      setFetchingFolders(true);
       try {
         const res = await axios.get(`${API_BASE_URL}/api/drive/folders/all`);
-        let allFolders = res.data.folders || [];
-        allFolders = allFolders.filter(f => f.id !== currentFolderId);
+        // Exclude current folder from selection
+        const folderList = res.data.folders.filter(f => f.id !== currentFolderId);
 
-        const tree = buildFolderTree(allFolders);
-        const flatFolders = [{ id: "root", name: "Root", level: 0 }, ...flattenTreeWithPath(tree)];
+        // Map to {id, label} with visual indentation
+        const formattedFolders = folderList.map(f => {
+          const depth = f.path.split("/").length - 1;
+          const indent = "|_".repeat(depth);
+          return { id: f.id, label: `${indent} ${f.name}` };
+        });
 
-        setFolders(flatFolders);
+        // Add Root folder at top
+        setFolders([{ id: "root", label: "Root" }, ...formattedFolders]);
       } catch (err) {
         console.error("Error fetching folders:", err);
-      } finally {
-        setFetchingFolders(false);
+        alert("Failed to fetch folders. Check console for details.");
       }
     };
 
     if (open) fetchFolders();
   }, [open, currentFolderId]);
 
+  // Move file handler
   const handleMove = async () => {
     if (!selectedFolder) return alert("Please select a destination folder.");
+
     try {
       setLoading(true);
       await axios.patch(`${API_BASE_URL}/api/drive/file/${fileId}/move`, {
         newParentId: selectedFolder,
       });
+
       if (onMoved) onMoved(fileId, selectedFolder);
       alert(`✅ "${fileName}" moved successfully.`);
       handleClose();
@@ -105,7 +85,7 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
         {loading ? <CircularProgress size={20} /> : <DriveFileMoveIcon />}
       </IconButton>
 
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>Move File</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -119,28 +99,14 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
               onChange={(e) => setSelectedFolder(e.target.value)}
               label="Destination Folder"
             >
-              {fetchingFolders ? (
-                <MenuItem disabled>
-                  <Typography variant="body2" color="textSecondary">
-                    <CircularProgress size={16} sx={{ mr: 1 }} /> Loading folders...
-                  </Typography>
+              {folders.map((f) => (
+                <MenuItem key={f.id} value={f.id}>
+                  {f.label}
                 </MenuItem>
-              ) : (
-                folders.map(f => (
-                  <MenuItem
-                    key={f.id}
-                    value={f.id}
-                    sx={{ pl: 2 + f.level * 2, display: "flex", alignItems: "center" }}
-                  >
-                    <FolderIcon fontSize="small" sx={{ mr: 1, color: `rgba(0,0,0,${0.7 - f.level*0.1})` }} />
-                    {f.name}
-                  </MenuItem>
-                ))
-              )}
+              ))}
             </Select>
           </FormControl>
         </DialogContent>
-
         <DialogActions>
           <Button onClick={handleClose} disabled={loading}>
             Cancel
@@ -149,7 +115,7 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
             onClick={handleMove}
             color="primary"
             variant="contained"
-            disabled={loading || fetchingFolders}
+            disabled={loading}
           >
             {loading ? <CircularProgress size={20} /> : "Move"}
           </Button>
