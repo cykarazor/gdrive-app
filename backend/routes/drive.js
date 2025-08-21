@@ -134,7 +134,7 @@ router.delete('/file/:id', async (req, res) => {
   }
 });
 
-  // Move file/folder
+  // Move or paste file/folder
   router.patch('/file/:id/move', async (req, res) => {
     try {
       const { newParentId } = req.body || {};
@@ -145,6 +145,27 @@ router.delete('/file/:id', async (req, res) => {
       handleError(res, err, 'Failed to move file');
     }
   });
+
+  // Copy file/folder
+  router.post('/file/:fileId/copy', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const { destinationFolderId } = req.body;
+
+    const copiedFile = await drive.files.copy({
+      fileId,
+      requestBody: {
+        parents: destinationFolderId ? [destinationFolderId] : [],
+      },
+      fields: 'id, name, mimeType, parents',
+    });
+
+    res.json(copiedFile.data);
+  } catch (err) {
+    console.error('Error copying file:', err.message);
+    res.status(500).json({ error: 'Failed to copy file' });
+  }
+});
 
   // Rename file/folder
 router.patch('/file/:id/rename', async (req, res) => {
@@ -164,6 +185,26 @@ router.patch('/file/:id/rename', async (req, res) => {
     });
   } catch (err) {
     handleError(res, err, 'Failed to rename file/folder');
+  }
+});
+
+router.post('/file/:fileId/copy', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const { destinationFolderId } = req.body;
+
+    const copiedFile = await drive.files.copy({
+      fileId,
+      requestBody: {
+        parents: destinationFolderId ? [destinationFolderId] : [],
+      },
+      fields: 'id, name, mimeType, parents',
+    });
+
+    res.json(copiedFile.data);
+  } catch (err) {
+    console.error('Error copying file:', err.message);
+    res.status(500).json({ error: 'Failed to copy file' });
   }
 });
 
