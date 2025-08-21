@@ -14,6 +14,7 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Stack,
 } from "@mui/material";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 
@@ -21,8 +22,8 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 export default function MoveFileButton({ fileId, fileName, currentFolderId, onMoved }) {
   const [open, setOpen] = useState(false);
+  const [loadingMove, setLoadingMove] = useState(false);
   const [loadingFolders, setLoadingFolders] = useState(false);
-  const [moving, setMoving] = useState(false);
   const [folders, setFolders] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState("");
 
@@ -35,38 +36,38 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
 
   // Fetch all folders for selection
   useEffect(() => {
+    if (!open) return;
+
     const fetchFolders = async () => {
       try {
         setLoadingFolders(true);
-
         const res = await axios.get(`${API_BASE_URL}/api/drive/folders/all`);
 
-        // Filter out the current folder
+        // Flatten folders to show full paths and exclude current folder
         const folderList = res.data.folders
           .filter(f => f.id !== currentFolderId)
-          // Map path with root prefix
           .map(f => ({
             id: f.id,
-            name: `root/${f.path}`, // display as root/.../subfolder
+            name: `root | ${f.path.replace(/\//g, " | ")}`, // replace "/" with " | "
           }));
 
-        // Add "Root" at the top
         setFolders([{ id: "root", name: "root" }, ...folderList]);
       } catch (err) {
         console.error("Error fetching folders:", err);
+        setFolders([{ id: "root", name: "root" }]);
       } finally {
         setLoadingFolders(false);
       }
     };
 
-    if (open) fetchFolders();
+    fetchFolders();
   }, [open, currentFolderId]);
 
   const handleMove = async () => {
     if (!selectedFolder) return alert("Please select a destination folder.");
 
     try {
-      setMoving(true);
+      setLoadingMove(true);
       await axios.patch(`${API_BASE_URL}/api/drive/file/${fileId}/move`, {
         newParentId: selectedFolder,
       });
@@ -79,18 +80,14 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
       console.error("Move failed:", err);
       alert("Failed to move file. Check console for details.");
     } finally {
-      setMoving(false);
+      setLoadingMove(false);
     }
   };
 
   return (
     <>
-      <IconButton
-        color="primary"
-        onClick={handleOpen}
-        disabled={loadingFolders || moving}
-      >
-        {(loadingFolders || moving) ? <CircularProgress size={20} /> : <DriveFileMoveIcon />}
+      <IconButton color="primary" onClick={handleOpen} disabled={loadingMove}>
+        {loadingMove ? <CircularProgress size={20} /> : <DriveFileMoveIcon />}
       </IconButton>
 
       <Dialog open={open} onClose={handleClose}>
@@ -106,27 +103,36 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
               value={selectedFolder}
               onChange={(e) => setSelectedFolder(e.target.value)}
               label="Destination Folder"
+              disabled={loadingFolders || loadingMove}
             >
-              {folders.map(f => (
-                <MenuItem key={f.id} value={f.id}>
-                  {f.name}
+              {loadingFolders ? (
+                <MenuItem disabled>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <CircularProgress size={20} />
+                    <span>Loading folders...</span>
+                  </Stack>
                 </MenuItem>
-              ))}
+              ) : (
+                folders.map(f => (
+                  <MenuItem key={f.id} value={f.id}>
+                    {f.name}
+                  </MenuItem>
+                ))
+              )}
             </Select>
           </FormControl>
         </DialogContent>
-
         <DialogActions>
-          <Button onClick={handleClose} disabled={moving || loadingFolders}>
+          <Button onClick={handleClose} disabled={loadingMove}>
             Cancel
           </Button>
           <Button
             onClick={handleMove}
             color="primary"
             variant="contained"
-            disabled={moving || loadingFolders || !selectedFolder}
+            disabled={loadingMove || !selectedFolder}
           >
-            {moving ? <CircularProgress size={20} /> : "Move"}
+            {loadingMove ? <CircularProgress size={20} /> : "Move"}
           </Button>
         </DialogActions>
       </Dialog>
