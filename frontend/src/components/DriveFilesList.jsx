@@ -9,6 +9,8 @@ import {
 import DriveLoadingPremium from './DriveLoadingPremium';
 import DeleteFileButton from './DeleteFileButton'; 
 import MoveFileButton from './MoveFileButton'; // NEW: Import Move button
+import RenameFileButton from './RenameFileButton';
+
 
 // MUI Icons
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -144,6 +146,13 @@ export default function DriveFilesList({
                       fileName={file.name}
                       currentFolderId={currentFolder?.id}
                       onMoved={onDeleteFile} // refresh list after move
+                    />
+
+                    {/* Rename button */}
+                    <RenameFileButton
+                      fileId={file.id}
+                      currentName={file.name}
+                      onRenameSuccess={onDeleteFile} // just refreshes the whole list
                     />
                   </TableCell>
                 </TableRow>
