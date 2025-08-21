@@ -105,21 +105,19 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
               label="Destination Folder"
               disabled={loadingFolders || loadingMove}
             >
-              {loadingFolders ? (
-                <MenuItem disabled>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <CircularProgress size={20} />
-                    <span>Loading folders...</span>
-                  </Stack>
-                </MenuItem>
-              ) : (
+              {!loadingFolders &&
                 folders.map(f => (
                   <MenuItem key={f.id} value={f.id}>
                     {f.name}
                   </MenuItem>
-                ))
-              )}
+                ))}
             </Select>
+            {loadingFolders && (
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1, ml: 1 }}>
+                <CircularProgress size={20} />
+                <span>Loading folders...</span>
+              </Stack>
+            )}
           </FormControl>
         </DialogContent>
         <DialogActions>
