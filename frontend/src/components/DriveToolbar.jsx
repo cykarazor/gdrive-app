@@ -71,6 +71,27 @@ export default function DriveToolbar({
           >
             Create Folder
           </Button>
+          <Button
+            variant="outlined"
+            disabled={!clipboard}
+            onClick={async () => {
+              try {
+                await axios.post(`${API_BASE_URL}/api/drive/file/paste`, {
+                  fileId: clipboard.fileId,
+                  targetFolderId: currentFolderId,
+                  action: clipboard.action, // "copy" or "cut"
+                });
+                alert(`✅ File ${clipboard.action}ed successfully!`);
+                setClipboard(null);
+                onPasteSuccess();
+              } catch (err) {
+                console.error("Paste failed:", err);
+                alert("Paste failed");
+              }
+            }}
+          >
+            Paste
+          </Button>
         </Box>
       </Stack>
     </Box>

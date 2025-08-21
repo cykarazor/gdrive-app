@@ -10,6 +10,8 @@ import DriveLoadingPremium from './DriveLoadingPremium';
 import DeleteFileButton from './DeleteFileButton'; 
 import MoveFileButton from './MoveFileButton'; // NEW: Import Move button
 import RenameFileButton from './RenameFileButton';
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ContentCutIcon from "@mui/icons-material/ContentCut";
 
 
 // MUI Icons
@@ -154,6 +156,15 @@ export default function DriveFilesList({
                       currentName={file.name}
                       onRenameSuccess={onDeleteFile} // just refreshes the whole list
                     />
+                    {/* Copy button */}
+                    <IconButton onClick={() => setClipboard({ fileId: file.id, action: "copy" })}>
+                      <ContentCopyIcon />
+                    </IconButton>
+
+                    {/* Cut button */}
+                    <IconButton onClick={() => setClipboard({ fileId: file.id, action: "cut" })}>
+                      <ContentCutIcon />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}

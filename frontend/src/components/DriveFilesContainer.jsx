@@ -14,6 +14,9 @@ export default function DriveFilesContainer({ reloadFlag }) {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
 
+  // 🔹 Clipboard state
+  const [clipboard, setClipboard] = useState(null);
+
   const {
     files,
     loading,
@@ -41,6 +44,10 @@ export default function DriveFilesContainer({ reloadFlag }) {
         goToBreadcrumb={goToBreadcrumb}
         onUploadClick={() => setUploadOpen(true)}
         onCreateFolderClick={() => setCreateFolderOpen(true)}
+        clipboard={clipboard}
+        setClipboard={setClipboard}
+        onPasteSuccess={() => fetchFiles(null, currentFolder.id)}
+        currentFolderId={currentFolder.id}
       />
 
       <UploadModal
@@ -71,6 +78,8 @@ export default function DriveFilesContainer({ reloadFlag }) {
         onSortChange={handleSortChange}
         onFolderClick={handleFolderClick} // ✅ restored
         onDeleteFile={() => fetchFiles(null, currentFolder.id)} // NEW: refresh files after delete
+        currentFolder={currentFolder}
+        setClipboard={setClipboard}   // pass clipboard setter
       />
 
       <PaginationControl
