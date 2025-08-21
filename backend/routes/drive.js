@@ -146,24 +146,38 @@ router.delete('/file/:id', async (req, res) => {
     }
   });
 
-  // Copy file/folder
-  router.post('/file/:fileId/copy', async (req, res) => {
+  // Paste file/folder (copy or cut)
+router.post('/file/paste', async (req, res) => {
   try {
-    const { fileId } = req.params;
-    const { destinationFolderId } = req.body;
+    const { fileId, targetFolderId, action } = req.body;
+    if (!fileId || !targetFolderId || !action) {
+      return res.status(400).json({ message: 'fileId, targetFolderId, and action are required' });
+    }
 
-    const copiedFile = await drive.files.copy({
-      fileId,
-      requestBody: {
-        parents: destinationFolderId ? [destinationFolderId] : [],
-      },
-      fields: 'id, name, mimeType, parents',
-    });
+    let result;
 
-    res.json(copiedFile.data);
+    if (action === 'copy') {
+      // Use existing copy logic
+      result = await driveSvc.copyFile({
+        fileId,
+        destinationFolderId: targetFolderId,
+      });
+
+    } else if (action === 'cut') {
+      // Use existing move logic
+      result = await driveSvc.moveFile({
+        fileId,
+        newParentId: targetFolderId,
+      });
+
+    } else {
+      return res.status(400).json({ message: 'Invalid action. Must be "copy" or "cut".' });
+    }
+
+    res.json({ success: true, file: result });
   } catch (err) {
-    console.error('Error copying file:', err.message);
-    res.status(500).json({ error: 'Failed to copy file' });
+    console.error('Paste operation failed:', err);
+    handleError(res, err, 'Paste operation failed');
   }
 });
 
