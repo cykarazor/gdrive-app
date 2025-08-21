@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
-import { TreeView, TreeItem } from "@mui/lab";
+import { TreeView, TreeItem } from '@mui/x-tree-view';
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import FolderIcon from "@mui/icons-material/Folder";
