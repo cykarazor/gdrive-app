@@ -14,6 +14,7 @@ import {
   Select,
   FormControl,
   InputLabel,
+  ListItemText,
 } from "@mui/material";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 
@@ -21,49 +22,51 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 export default function MoveFileButton({ fileId, fileName, currentFolderId, onMoved }) {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadingFolders, setLoadingFolders] = useState(false);
   const [folders, setFolders] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState("");
 
-  // Open/close handlers
   const handleOpen = () => {
     setSelectedFolder("");
     setOpen(true);
   };
   const handleClose = () => setOpen(false);
 
-  // Fetch all folders
+  // Fetch folders when dialog opens
   useEffect(() => {
     const fetchFolders = async () => {
       try {
+        setLoadingFolders(true);
         const res = await axios.get(`${API_BASE_URL}/api/drive/folders/all`);
-        // Exclude current folder from selection
+
         const folderList = res.data.folders.filter(f => f.id !== currentFolderId);
 
-        // Map to {id, label} with visual indentation
         const formattedFolders = folderList.map(f => {
-          const depth = f.path.split("/").length - 1;
-          const indent = "|_".repeat(depth);
-          return { id: f.id, label: `${indent} ${f.name}` };
+          const path = f.path.startsWith("/") ? f.path.slice(1) : f.path;
+          const depth = path.split("/").length - 1; // indentation by depth
+          return {
+            id: f.id,
+            label: `root/${path}`,
+            depth,
+          };
         });
 
-        // Add Root folder at top
-        setFolders([{ id: "root", label: "Root" }, ...formattedFolders]);
+        setFolders([{ id: "root", label: "root", depth: 0 }, ...formattedFolders]);
       } catch (err) {
         console.error("Error fetching folders:", err);
         alert("Failed to fetch folders. Check console for details.");
+      } finally {
+        setLoadingFolders(false);
       }
     };
 
     if (open) fetchFolders();
   }, [open, currentFolderId]);
 
-  // Move file handler
   const handleMove = async () => {
     if (!selectedFolder) return alert("Please select a destination folder.");
 
     try {
-      setLoading(true);
       await axios.patch(`${API_BASE_URL}/api/drive/file/${fileId}/move`, {
         newParentId: selectedFolder,
       });
@@ -74,15 +77,13 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
     } catch (err) {
       console.error("Move failed:", err);
       alert("Failed to move file. Check console for details.");
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <>
-      <IconButton color="primary" onClick={handleOpen} disabled={loading}>
-        {loading ? <CircularProgress size={20} /> : <DriveFileMoveIcon />}
+      <IconButton color="primary" onClick={handleOpen} disabled={loadingFolders}>
+        {loadingFolders ? <CircularProgress size={20} /> : <DriveFileMoveIcon />}
       </IconButton>
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
@@ -98,26 +99,40 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
               value={selectedFolder}
               onChange={(e) => setSelectedFolder(e.target.value)}
               label="Destination Folder"
+              MenuProps={{ PaperProps: { sx: { maxHeight: 300 } } }}
+              renderValue={(selected) => {
+                const folder = folders.find(f => f.id === selected);
+                return folder ? folder.label : "";
+              }}
             >
-              {folders.map((f) => (
-                <MenuItem key={f.id} value={f.id}>
-                  {f.label}
+              {loadingFolders ? (
+                <MenuItem disabled>
+                  <CircularProgress size={20} sx={{ mr: 1 }} /> Loading...
                 </MenuItem>
-              ))}
+              ) : (
+                folders.map((f) => (
+                  <MenuItem key={f.id} value={f.id}>
+                    <ListItemText
+                      primary={f.label}
+                      sx={{ pl: `${f.depth * 1.5}rem` }} // indent by depth
+                    />
+                  </MenuItem>
+                ))
+              )}
             </Select>
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>
+          <Button onClick={handleClose} disabled={loadingFolders}>
             Cancel
           </Button>
           <Button
             onClick={handleMove}
             color="primary"
             variant="contained"
-            disabled={loading}
+            disabled={loadingFolders || !selectedFolder}
           >
-            {loading ? <CircularProgress size={20} /> : "Move"}
+            Move
           </Button>
         </DialogActions>
       </Dialog>
