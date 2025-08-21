@@ -15,8 +15,10 @@ import {
   FormControl,
   InputLabel,
   Typography,
+  Box,
 } from "@mui/material";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
+import FolderIcon from "@mui/icons-material/Folder";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -35,13 +37,13 @@ const buildFolderTree = (folders) => {
   return tree;
 };
 
-// Helper: flatten tree with visual path
-const flattenTreeWithPath = (nodes, pathPrefix = "") =>
+// Helper: flatten tree with visual path and level
+const flattenTreeWithPath = (nodes, pathPrefix = "", level = 0) =>
   nodes.flatMap(node => {
     const displayPath = pathPrefix ? `${pathPrefix} |_ ${node.name}` : node.name;
     return [
-      { id: node.id, name: displayPath },
-      ...flattenTreeWithPath(node.children || [], displayPath),
+      { id: node.id, name: displayPath, level },
+      ...flattenTreeWithPath(node.children || [], displayPath, level + 1),
     ];
   });
 
@@ -64,12 +66,10 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
       try {
         const res = await axios.get(`${API_BASE_URL}/api/drive/folders/all`);
         let allFolders = res.data.folders || [];
-
-        // Exclude current folder
         allFolders = allFolders.filter(f => f.id !== currentFolderId);
 
         const tree = buildFolderTree(allFolders);
-        const flatFolders = [{ id: "root", name: "Root" }, ...flattenTreeWithPath(tree)];
+        const flatFolders = [{ id: "root", name: "Root", level: 0 }, ...flattenTreeWithPath(tree)];
 
         setFolders(flatFolders);
       } catch (err) {
@@ -128,7 +128,12 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
                 </MenuItem>
               ) : (
                 folders.map(f => (
-                  <MenuItem key={f.id} value={f.id}>
+                  <MenuItem
+                    key={f.id}
+                    value={f.id}
+                    sx={{ pl: 2 + f.level * 2, display: "flex", alignItems: "center" }}
+                  >
+                    <FolderIcon fontSize="small" sx={{ mr: 1, color: `rgba(0,0,0,${0.7 - f.level*0.1})` }} />
                     {f.name}
                   </MenuItem>
                 ))
