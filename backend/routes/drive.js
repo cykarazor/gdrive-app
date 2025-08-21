@@ -107,13 +107,17 @@ module.exports = function (auth) {
 
   // Delete file/folder
   router.delete('/file/:id', async (req, res) => {
-    try {
-      await driveSvc.deleteFile(req.params.id);
-      res.json({ success: true });
-    } catch (err) {
-      handleError(res, err, 'Failed to delete file');
-    }
-  });
+  try {
+    console.log("DELETE route hit. File ID:", req.params.id); // 👈 Add this
+    await driveSvc.deleteFile(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete error:", err); // 👈 Add this
+    handleError(res, err, 'Failed to delete file');
+  }
+});
+
+  // Rename file/folder
 
   // Move file/folder
   router.patch('/file/:id/move', async (req, res) => {

@@ -25,12 +25,20 @@ export default function DeleteFileButton({ fileId, fileName, onDeleted }) {
   const handleDelete = async () => {
     try {
       setLoading(true);
-      await axios.delete(`${API_BASE_URL}/drive/file/${fileId}`);
+
+      // 🔹 Add console logs for debugging
+      console.log("🟡 Delete requested for:", { fileId, fileName });
+      console.log("🟡 Request URL:", `${API_BASE_URL}/drive/file/${fileId}`);
+
+      const res = await axios.delete(`${API_BASE_URL}/drive/file/${fileId}`);
+
+      console.log("🟢 Delete response:", res.data); // ✅ log backend response
+
       if (onDeleted) onDeleted(fileId); // notify parent to update list
       handleClose();
     } catch (err) {
-      console.error("Delete failed", err);
-      alert("Failed to delete file.");
+      console.error("🔴 Delete failed:", err); // ❌ show detailed error
+      alert("Failed to delete file. Check console for details.");
     } finally {
       setLoading(false);
     }
@@ -46,12 +54,20 @@ export default function DeleteFileButton({ fileId, fileName, onDeleted }) {
         <DialogTitle>Delete File</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete <strong>{fileName}</strong>? This will move it to your Google Drive trash.
+            Are you sure you want to delete <strong>{fileName}</strong>? This
+            will move it to your Google Drive trash.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>Cancel</Button>
-          <Button onClick={handleDelete} color="error" variant="contained" disabled={loading}>
+          <Button onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            color="error"
+            variant="contained"
+            disabled={loading}
+          >
             {loading ? <CircularProgress size={20} /> : "Delete"}
           </Button>
         </DialogActions>
