@@ -1,7 +1,9 @@
-// frontend/src/components/DriveToolbar.jsx
 import { Box, Breadcrumbs, Link, Button, Stack } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
+import axios from "axios";
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 export default function DriveToolbar({
   folderStack,
@@ -10,6 +12,10 @@ export default function DriveToolbar({
   goToBreadcrumb,
   onUploadClick,
   onCreateFolderClick,
+  clipboard,          // ✅ added
+  setClipboard,       // ✅ added
+  currentFolderId,    // ✅ added
+  onPasteSuccess,     // ✅ added
 }) {
   const path = [{ id: 'root', name: 'My Drive' }];
   if (currentFolder.id !== 'root') path.push(...folderStack, currentFolder);

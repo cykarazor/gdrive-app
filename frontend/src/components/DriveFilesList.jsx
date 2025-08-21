@@ -1,20 +1,19 @@
-// frontend/src/components/DriveFilesList.jsx
 import {
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Typography,
-  TableSortLabel,
-  Box,
+  TableSortLabel, Box, IconButton
 } from '@mui/material';
 
 import DriveLoadingPremium from './DriveLoadingPremium';
 import DeleteFileButton from './DeleteFileButton'; 
-import MoveFileButton from './MoveFileButton'; // NEW: Import Move button
+import MoveFileButton from './MoveFileButton';
 import RenameFileButton from './RenameFileButton';
+
+// Copy/Cut icons
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ContentCutIcon from "@mui/icons-material/ContentCut";
 
-
-// MUI Icons
+// File type icons
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ImageIcon from '@mui/icons-material/Image';
@@ -54,9 +53,10 @@ export default function DriveFilesList({
   orderBy,
   order,
   onSortChange,
-  onFolderClick, // Folder click handler
-  onDeleteFile,  // Callback when a file is deleted
-  currentFolder, // Needed for MoveFileButton
+  onFolderClick,
+  onDeleteFile,
+  currentFolder,
+  setClipboard, // ✅ receive prop
 }) {
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden', p: 2 }}>
@@ -105,7 +105,7 @@ export default function DriveFilesList({
                   </TableSortLabel>
                 </TableCell>
 
-                <TableCell sx={{ minWidth: 150 }}>Actions</TableCell> {/* Delete + Move */}
+                <TableCell sx={{ minWidth: 180 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
 
@@ -135,35 +135,33 @@ export default function DriveFilesList({
                   </TableCell>
 
                   <TableCell>
-                    {/* Delete button */}
                     <DeleteFileButton
                       fileId={file.id}
                       fileName={file.name}
                       onDeleted={onDeleteFile}
                     />
 
-                    {/* Move button */}
                     <MoveFileButton
                       fileId={file.id}
                       fileName={file.name}
                       currentFolderId={currentFolder?.id}
-                      onMoved={onDeleteFile} // refresh list after move
+                      onMoved={onDeleteFile}
                     />
 
-                    {/* Rename button */}
                     <RenameFileButton
                       fileId={file.id}
                       currentName={file.name}
-                      onRenameSuccess={onDeleteFile} // just refreshes the whole list
+                      onRenameSuccess={onDeleteFile}
                     />
-                    {/* Copy button */}
+
+                    {/* Copy */}
                     <IconButton onClick={() => setClipboard({ fileId: file.id, action: "copy" })}>
-                      <ContentCopyIcon />
+                      <ContentCopyIcon fontSize="small" />
                     </IconButton>
 
-                    {/* Cut button */}
+                    {/* Cut */}
                     <IconButton onClick={() => setClipboard({ fileId: file.id, action: "cut" })}>
-                      <ContentCutIcon />
+                      <ContentCutIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
                 </TableRow>
