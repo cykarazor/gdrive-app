@@ -7,8 +7,8 @@ import {
 } from '@mui/material';
 
 import DriveLoadingPremium from './DriveLoadingPremium';
-import DeleteFileButton from './DeleteFileButton'; // NEW: Import Delete button
-import MoveFileButton from './MoveFileButton'; // NEW
+import DeleteFileButton from './DeleteFileButton'; 
+import MoveFileButton from './MoveFileButton'; // NEW: Import Move button
 
 // MUI Icons
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -16,9 +16,9 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ImageIcon from '@mui/icons-material/Image';
 import FolderIcon from '@mui/icons-material/Folder';
 import ArchiveIcon from '@mui/icons-material/Archive';
-import TableChartIcon from '@mui/icons-material/TableChart';       // Excel
-import DescriptionIcon from '@mui/icons-material/Description';    // Word
-import SlideshowIcon from '@mui/icons-material/Slideshow';        // PowerPoint
+import TableChartIcon from '@mui/icons-material/TableChart';
+import DescriptionIcon from '@mui/icons-material/Description';
+import SlideshowIcon from '@mui/icons-material/Slideshow';
 
 function formatFileSize(bytes) {
   if (!bytes) return '0 Bytes';
@@ -44,14 +44,15 @@ const mimeTypeIcons = {
   'application/vnd.google-apps.folder': <FolderIcon color="warning" />,
 };
 
-function DriveFilesList({
+export default function DriveFilesList({
   files,
   loading,
   orderBy,
   order,
   onSortChange,
-  onFolderClick, // NEW: folder click handler
-  onDeleteFile,  // NEW: callback when a file is deleted
+  onFolderClick, // Folder click handler
+  onDeleteFile,  // Callback when a file is deleted
+  currentFolder, // Needed for MoveFileButton
 }) {
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden', p: 2 }}>
@@ -100,22 +101,7 @@ function DriveFilesList({
                   </TableSortLabel>
                 </TableCell>
 
-                {/* NEW: Actions column for Delete button */}
-                <TableCell>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <MoveFileButton
-                      fileId={file.id}
-                      fileName={file.name}
-                      currentFolderId={currentFolder?.id} // pass current folder context
-                      onMoved={onDeleteFile} // reuse callback to refresh file list
-                    />
-                    <DeleteFileButton
-                      fileId={file.id}
-                      fileName={file.name}
-                      onDeleted={onDeleteFile}
-                    />
-                  </Box>
-                </TableCell>
+                <TableCell sx={{ minWidth: 150 }}>Actions</TableCell> {/* Delete + Move */}
               </TableRow>
             </TableHead>
 
@@ -125,9 +111,7 @@ function DriveFilesList({
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {mimeTypeIcons[file.mimeType] || <InsertDriveFileIcon />}
-
                       {file.mimeType === 'application/vnd.google-apps.folder' ? (
-                        // Folder name is clickable to open folder
                         <Typography
                           sx={{ cursor: 'pointer', color: 'primary.main' }}
                           onClick={() => onFolderClick?.(file.id, file.name)}
@@ -146,12 +130,20 @@ function DriveFilesList({
                     {file.modifiedTime ? new Date(file.modifiedTime).toLocaleString() : '-'}
                   </TableCell>
 
-                  {/* NEW: Delete button */}
                   <TableCell>
+                    {/* Delete button */}
                     <DeleteFileButton
                       fileId={file.id}
                       fileName={file.name}
-                      onDeleted={onDeleteFile} // calls parent refresh
+                      onDeleted={onDeleteFile}
+                    />
+
+                    {/* Move button */}
+                    <MoveFileButton
+                      fileId={file.id}
+                      fileName={file.name}
+                      currentFolderId={currentFolder?.id}
+                      onMoved={onDeleteFile} // refresh list after move
                     />
                   </TableCell>
                 </TableRow>
@@ -163,5 +155,3 @@ function DriveFilesList({
     </Paper>
   );
 }
-
-export default DriveFilesList;

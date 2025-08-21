@@ -34,26 +34,32 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
 
   // Fetch all folders for selection
   useEffect(() => {
-    const fetchFolders = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/api/drive/files?folderId=root&pageSize=100&orderBy=folder,name`);
-        // Only folders
-        const folderList = res.data.files.filter(f => f.mimeType === "application/vnd.google-apps.folder");
-        setFolders(folderList);
-      } catch (err) {
-        console.error("Failed to fetch folders:", err);
-      }
-    };
+  const fetchFolders = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/drive/files?folderId=root&pageSize=100&orderBy=folder,name`);
 
-    if (open) fetchFolders();
-  }, [open]);
+      // Only folders, and exclude the current folder
+      const folderList = res.data.files
+        .filter(f => f.mimeType === "application/vnd.google-apps.folder" && f.id !== currentFolderId);
+
+      // Add "Root" folder at the top
+      setFolders([{ id: "root", name: "Root" }, ...folderList]);
+
+    } catch (err) {
+      console.error("Failed to fetch folders:", err);
+    }
+  };
+
+  if (open) fetchFolders();
+}, [open, currentFolderId]);
+
 
   const handleMove = async () => {
     if (!selectedFolder) return alert("Please select a destination folder.");
 
     try {
       setLoading(true);
-      const res = await axios.patch(`${API_BASE_URL}/api/drive/file/${fileId}/move`, {
+      await axios.patch(`${API_BASE_URL}/api/drive/file/${fileId}/move`, {
         newParentId: selectedFolder,
       });
 
