@@ -20,7 +20,7 @@ import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-// Helper: build a tree structure from flat folder list
+// Helper: build tree from flat folder list
 const buildFolderTree = (folders) => {
   const map = {};
   folders.forEach(f => map[f.id] = { ...f, children: [] });
@@ -35,12 +35,15 @@ const buildFolderTree = (folders) => {
   return tree;
 };
 
-// Helper: flatten tree with indentation for Select
-const flattenTreeForSelect = (nodes, depth = 0) =>
-  nodes.flatMap(node => [
-    { id: node.id, name: node.name, depth },
-    ...flattenTreeForSelect(node.children || [], depth + 1),
-  ]);
+// Helper: flatten tree with visual path
+const flattenTreeWithPath = (nodes, pathPrefix = "") =>
+  nodes.flatMap(node => {
+    const displayPath = pathPrefix ? `${pathPrefix} |_ ${node.name}` : node.name;
+    return [
+      { id: node.id, name: displayPath },
+      ...flattenTreeWithPath(node.children || [], displayPath),
+    ];
+  });
 
 export default function MoveFileButton({ fileId, fileName, currentFolderId, onMoved }) {
   const [open, setOpen] = useState(false);
@@ -65,11 +68,9 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
         // Exclude current folder
         allFolders = allFolders.filter(f => f.id !== currentFolderId);
 
-        // Build tree structure
         const tree = buildFolderTree(allFolders);
+        const flatFolders = [{ id: "root", name: "Root" }, ...flattenTreeWithPath(tree)];
 
-        // Flatten tree with depth for indentation
-        const flatFolders = [{ id: "root", name: "Root", depth: 0 }, ...flattenTreeForSelect(tree)];
         setFolders(flatFolders);
       } catch (err) {
         console.error("Error fetching folders:", err);
@@ -83,7 +84,6 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
 
   const handleMove = async () => {
     if (!selectedFolder) return alert("Please select a destination folder.");
-
     try {
       setLoading(true);
       await axios.patch(`${API_BASE_URL}/api/drive/file/${fileId}/move`, {
@@ -129,7 +129,7 @@ export default function MoveFileButton({ fileId, fileName, currentFolderId, onMo
               ) : (
                 folders.map(f => (
                   <MenuItem key={f.id} value={f.id}>
-                    <span style={{ paddingLeft: f.depth * 16 }}>{f.name}</span>
+                    {f.name}
                   </MenuItem>
                 ))
               )}
