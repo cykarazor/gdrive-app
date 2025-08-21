@@ -26,19 +26,19 @@ export default function DeleteFileButton({ fileId, fileName, onDeleted }) {
     try {
       setLoading(true);
 
-      // 🔹 Add console logs for debugging
-      //console.log("🟡 Delete requested for:", { fileId, fileName });
-      //console.log("🟡 Request URL:", `${API_BASE_URL}/api/drive/file/${fileId}`);
+      const res = await axios.delete(`${API_BASE_URL}/api/drive/file/${fileId}`);
 
-      await axios.delete(`${API_BASE_URL}/api/drive/file/${fileId}`);
-
-      //console.log("🟢 Delete response:", res.data); // ✅ log backend response
+      if (res.data?.trashed) {
+        alert(`✅ "${fileName}" was moved to Trash.`);
+      } else {
+        alert(`✅ "${fileName}" deleted successfully.`);
+      }
 
       if (onDeleted) onDeleted(fileId); // notify parent to update list
       handleClose();
     } catch (err) {
-      console.error("🔴 Delete failed:", err); // ❌ show detailed error
-      alert("Failed to delete file. Check console for details.");
+      console.error("Delete failed:", err);
+      alert("❌ Failed to delete file. Check console for details.");
     } finally {
       setLoading(false);
     }
@@ -54,8 +54,7 @@ export default function DeleteFileButton({ fileId, fileName, onDeleted }) {
         <DialogTitle>Delete File</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete <strong>{fileName}</strong>? This
-            will move it to your Google Drive trash.
+            Are you sure you want to delete <strong>{fileName}</strong>? This will move it to your Google Drive Trash.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

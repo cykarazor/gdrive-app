@@ -105,15 +105,22 @@ module.exports = function (auth) {
     }
   });
 
-  // Delete file/folder
-  router.delete('/file/:id', async (req, res) => {
+  // Delete file/folder (move to trash)
+router.delete('/file/:id', async (req, res) => {
   try {
-    //console.log("DELETE route hit. File ID:", req.params.id); // 👈 Add this
-    await driveSvc.deleteFile(req.params.id);
-    res.json({ success: true });
+    //console.log("DELETE route hit. File ID:", req.params.id);
+
+    // Move file/folder to trash instead of permanent deletion
+    const result = await driveSvc.deleteFile(req.params.id);
+
+    res.json({
+      success: true,
+      trashed: result.trashed, // true if successfully moved to trash
+      message: "File/folder moved to trash",
+    });
   } catch (err) {
-    console.error("Delete error:", err); // 👈 Add this
-    handleError(res, err, 'Failed to delete file');
+    console.error("Delete error:", err);
+    handleError(res, err, 'Failed to move file/folder to trash');
   }
 });
 

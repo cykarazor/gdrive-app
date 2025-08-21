@@ -50,9 +50,15 @@ module.exports = function createDriveService(auth) {
   }
 
   async function deleteFile(fileId) {
-    await drive.files.delete({ fileId, supportsAllDrives: true });
-    return { success: true };
-  }
+  // Move file or folder to Trash instead of permanent deletion
+  const res = await drive.files.update({
+    fileId,
+    requestBody: { trashed: true }, // ✅ mark as trashed
+    supportsAllDrives: true,
+  });
+
+  return { success: true, trashed: res.data.trashed }; // returns true if moved to trash
+}
 
   async function getParents(fileId) {
     const res = await drive.files.get({
