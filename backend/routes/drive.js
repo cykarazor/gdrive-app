@@ -94,14 +94,14 @@ module.exports = function (auth) {
   });
 
   // List all folders recursively
-router.get('/folders/all', async (req, res) => {
-  try {
-    const folders = await driveSvc.listAllFoldersRecursive('root');
-    res.json({ folders });
-  } catch (err) {
-    handleError(res, err, 'Failed to list all folders');
-  }
-});
+  router.get('/folders/all', async (req, res) => {
+    try {
+      const folders = await driveSvc.listAllFoldersRecursive('root');
+      res.json({ folders });
+    } catch (err) {
+      handleError(res, err, 'Failed to list all folders');
+    }
+  });
 
   // Create folder
   router.post('/folder', async (req, res) => {
@@ -116,23 +116,21 @@ router.get('/folders/all', async (req, res) => {
   });
 
   // Delete file/folder (move to trash)
-router.delete('/file/:id', async (req, res) => {
-  try {
-    //console.log("DELETE route hit. File ID:", req.params.id);
+  router.delete('/file/:id', async (req, res) => {
+    try {
+      // Move file/folder to trash instead of permanent deletion
+      const result = await driveSvc.deleteFile(req.params.id);
 
-    // Move file/folder to trash instead of permanent deletion
-    const result = await driveSvc.deleteFile(req.params.id);
-
-    res.json({
-      success: true,
-      trashed: result.trashed, // true if successfully moved to trash
-      message: "File/folder moved to trash",
-    });
-  } catch (err) {
-    console.error("Delete error:", err);
-    handleError(res, err, 'Failed to move file/folder to trash');
-  }
-});
+      res.json({
+        success: true,
+        trashed: result.trashed, // true if successfully moved to trash
+        message: "File/folder moved to trash",
+      });
+    } catch (err) {
+      console.error("Delete error:", err);
+      handleError(res, err, 'Failed to move file/folder to trash');
+    }
+  });
 
   // Move or paste file/folder
   router.patch('/file/:id/move', async (req, res) => {
@@ -147,80 +145,57 @@ router.delete('/file/:id', async (req, res) => {
   });
 
   // Paste file/folder (copy or cut)
-router.post('/file/paste', async (req, res) => {
-  try {
-    const { fileId, targetFolderId, action } = req.body;
-    if (!fileId || !targetFolderId || !action) {
-      return res.status(400).json({ message: 'fileId, targetFolderId, and action are required' });
+  router.post('/file/paste', async (req, res) => {
+    try {
+      const { fileId, targetFolderId, action } = req.body;
+      if (!fileId || !targetFolderId || !action) {
+        return res.status(400).json({ message: 'fileId, targetFolderId, and action are required' });
+      }
+
+      let result;
+
+      if (action === 'copy') {
+        // ✅ Now uses driveSvc.copyFile
+        result = await driveSvc.copyFile({
+          fileId,
+          destinationFolderId: targetFolderId,
+        });
+      } else if (action === 'cut') {
+        result = await driveSvc.moveFile({
+          fileId,
+          newParentId: targetFolderId,
+        });
+      } else {
+        return res.status(400).json({ message: 'Invalid action. Must be "copy" or "cut".' });
+      }
+
+      res.json({ success: true, file: result });
+    } catch (err) {
+      console.error('Paste operation failed:', err);
+      handleError(res, err, 'Paste operation failed');
     }
-
-    let result;
-
-    if (action === 'copy') {
-      // Use existing copy logic
-      result = await driveSvc.copyFile({
-        fileId,
-        destinationFolderId: targetFolderId,
-      });
-
-    } else if (action === 'cut') {
-      // Use existing move logic
-      result = await driveSvc.moveFile({
-        fileId,
-        newParentId: targetFolderId,
-      });
-
-    } else {
-      return res.status(400).json({ message: 'Invalid action. Must be "copy" or "cut".' });
-    }
-
-    res.json({ success: true, file: result });
-  } catch (err) {
-    console.error('Paste operation failed:', err);
-    handleError(res, err, 'Paste operation failed');
-  }
-});
+  });
 
   // Rename file/folder
-router.patch('/file/:id/rename', async (req, res) => {
-  try {
-    const { newName } = req.body || {};
-    if (!newName?.trim()) return res.status(400).json({ message: 'New name is required' });
+  router.patch('/file/:id/rename', async (req, res) => {
+    try {
+      const { newName } = req.body || {};
+      if (!newName?.trim()) return res.status(400).json({ message: 'New name is required' });
 
-    const data = await driveSvc.renameFile({
-      fileId: req.params.id,
-      newName: newName.trim(),
-    });
+      const data = await driveSvc.renameFile({
+        fileId: req.params.id,
+        newName: newName.trim(),
+      });
 
-    res.json({
-      success: true,
-      id: data.id,
-      name: data.name,
-    });
-  } catch (err) {
-    handleError(res, err, 'Failed to rename file/folder');
-  }
-});
-
-router.post('/file/:fileId/copy', async (req, res) => {
-  try {
-    const { fileId } = req.params;
-    const { destinationFolderId } = req.body;
-
-    const copiedFile = await drive.files.copy({
-      fileId,
-      requestBody: {
-        parents: destinationFolderId ? [destinationFolderId] : [],
-      },
-      fields: 'id, name, mimeType, parents',
-    });
-
-    res.json(copiedFile.data);
-  } catch (err) {
-    console.error('Error copying file:', err.message);
-    res.status(500).json({ error: 'Failed to copy file' });
-  }
-});
+      res.json({
+        success: true,
+        id: data.id,
+        name: data.name,
+      });
+    } catch (err) {
+      handleError(res, err, 'Failed to rename file/folder');
+    }
+  });
 
   // Get file metadata
   router.get('/file/:id', async (req, res) => {
