@@ -1,10 +1,7 @@
 // frontend/src/components/DownloadButton.jsx
-import { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import { IconButton, Tooltip, CircularProgress } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
-
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 export default function DownloadButton({ file }) {
   const [loading, setLoading] = useState(false);
@@ -12,24 +9,32 @@ export default function DownloadButton({ file }) {
   const handleDownload = async () => {
     setLoading(true);
     try {
-      const url = `${API_BASE_URL}/api/drive/file/${file.id}/download`;
+      // Use the backend API URL
+      const url = `${process.env.REACT_APP_API_BASE_URL}/api/drive/file/${file.id}/download`;
 
-      const response = await axios.get(url, {
-        responseType: 'blob', // important for downloading
-      });
+      const response = await fetch(url, { method: 'GET' });
+      if (!response.ok) throw new Error('Download failed');
 
-      const blob = new Blob([response.data]);
+      const blob = await response.blob();
+
+      // Determine proper filename
+      let fileName = file.name;
+      if (file.mimeType === 'application/vnd.google-apps.folder') {
+        // Ensure folder downloads as .zip
+        if (!fileName.endsWith('.zip')) fileName += '.zip';
+      }
+
+      // Trigger download
       const downloadUrl = window.URL.createObjectURL(blob);
-
       const a = document.createElement('a');
       a.href = downloadUrl;
-      a.download = file.name;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
-      console.error('Download failed', err);
+      console.error(err);
       alert('Failed to download file/folder.');
     } finally {
       setLoading(false);
