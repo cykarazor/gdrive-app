@@ -4,6 +4,7 @@ const path = require('path');
 const express = require('express');
 const multer = require('multer');
 const upload = multer({ dest: path.join(__dirname, '..', 'uploads') });
+const { streamFile, streamFolderAsZip } = require('../helpers/downloadHelper');
 
 const createDriveService = require('../services/googleDriveService');
 
@@ -207,25 +208,34 @@ module.exports = function (auth) {
     }
   });
 
-  // Download file
+  // Download file or folder
   router.get('/file/:id/download', async (req, res) => {
     try {
       const meta = await driveSvc.getFileMetadata(req.params.id);
-      const stream = await driveSvc.downloadFile({ fileId: req.params.id });
 
-      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(meta.name)}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${encodeURIComponent(meta.name)}"`
+      );
       if (meta.mimeType) res.setHeader('Content-Type', meta.mimeType);
 
-      stream.on('error', (e) => {
-        console.error('Download stream error:', e);
-        if (!res.headersSent) res.status(500).end('Download error');
-      });
-
-      stream.pipe(res);
+      if (meta.mimeType === 'application/vnd.google-apps.folder') {
+        // Folder → stream as ZIP
+        await driveSvc.downloadFolder(req.params.id, res);
+      } else {
+        // File → stream directly
+        const fileStream = await driveSvc.downloadFile({ fileId: req.params.id });
+        fileStream.pipe(res);
+        fileStream.on('error', (err) => {
+          console.error('File stream error:', err);
+          if (!res.headersSent) res.status(500).end('Download error');
+        });
+      }
     } catch (err) {
-      handleError(res, err, 'Failed to download file');
+      handleError(res, err, 'Failed to download file/folder');
     }
   });
+
 
   return router;
 };

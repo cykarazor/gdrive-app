@@ -2,6 +2,7 @@
 const fs = require('fs');
 const { google } = require('googleapis');
 const { getUniqueFileName } = require('../helpers/duplicateNameHelper'); // ✅ imported helper
+const { streamFolderAsZip } = require('../helpers/downloadHelper');
 
 module.exports = function createDriveService(auth) {
   const drive = google.drive({ version: 'v3', auth });
@@ -129,6 +130,11 @@ module.exports = function createDriveService(auth) {
     return res.data;
   }
 
+  async function downloadFolder(folderId, output) {
+    // Use the helper to stream folder as ZIP
+    await streamFolderAsZip(drive, folderId, output);
+  }
+
   async function renameFile({ fileId, newName }) {
     const res = await drive.files.update({
       fileId,
@@ -140,6 +146,7 @@ module.exports = function createDriveService(auth) {
   }
 
   return {
+    drive, // Expose the drive instance for advanced operations if needed
     listFiles,
     listAllFoldersRecursive,
     uploadFile,
@@ -149,6 +156,7 @@ module.exports = function createDriveService(auth) {
     copyFile, // ✅ updated with duplicate protection
     getFileMetadata,
     downloadFile,
+    downloadFolder,
     renameFile,
   };
 };
