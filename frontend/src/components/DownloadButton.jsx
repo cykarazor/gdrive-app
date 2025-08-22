@@ -1,7 +1,10 @@
 // frontend/src/components/DownloadButton.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
+import axios from 'axios';
 import { IconButton, Tooltip, CircularProgress } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 export default function DownloadButton({ file }) {
   const [loading, setLoading] = useState(false);
@@ -9,35 +12,24 @@ export default function DownloadButton({ file }) {
   const handleDownload = async () => {
     setLoading(true);
     try {
-      // Backend endpoint URL
-      const url = `/api/drive/file/${file.id}/download`;
+      const url = `${API_BASE_URL}/api/drive/file/${file.id}/download`;
 
-      // Fetch the file as a blob
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          // add auth headers if needed
-        },
+      const response = await axios.get(url, {
+        responseType: 'blob', // important for downloading
       });
 
-      if (!response.ok) {
-        throw new Error('Download failed');
-      }
-
-      const blob = await response.blob();
+      const blob = new Blob([response.data]);
       const downloadUrl = window.URL.createObjectURL(blob);
 
-      // Create a temporary <a> to trigger download
       const a = document.createElement('a');
       a.href = downloadUrl;
       a.download = file.name;
       document.body.appendChild(a);
       a.click();
       a.remove();
-
       window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
-      console.error(err);
+      console.error('Download failed', err);
       alert('Failed to download file/folder.');
     } finally {
       setLoading(false);
