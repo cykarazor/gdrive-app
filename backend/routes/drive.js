@@ -4,7 +4,8 @@ const path = require('path');
 const express = require('express');
 const multer = require('multer');
 const upload = multer({ dest: path.join(__dirname, '..', 'uploads') });
-const { streamFile, streamFolderAsZip } = require('../helpers/downloadHelper');
+//const { streamFile, streamFolderAsZip } = require('../helpers/downloadHelper');
+const { streamMultipleFilesAndFolders } = require('../helpers/batchDownloadHelper');
 
 const createDriveService = require('../services/googleDriveService');
 
@@ -235,6 +236,24 @@ module.exports = function (auth) {
       handleError(res, err, 'Failed to download file/folder');
     }
   });
+
+  // Batch download multiple files and folders
+  router.post('/files/download', async (req, res) => {
+  try {
+    const { fileIds } = req.body;
+    if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
+      return res.status(400).json({ message: 'fileIds array is required' });
+    }
+
+    res.setHeader('Content-Disposition', 'attachment; filename="download.zip"');
+    res.setHeader('Content-Type', 'application/zip');
+
+    await streamMultipleFilesAndFolders(driveSvc.drive, fileIds, res);
+  } catch (err) {
+    console.error('Batch download failed:', err);
+    res.status(500).json({ message: 'Batch download failed' });
+  }
+});
 
 
   return router;
