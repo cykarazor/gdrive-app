@@ -8,6 +8,7 @@ import DriveLoadingPremium from './DriveLoadingPremium';
 import DeleteFileButton from './DeleteFileButton'; 
 import MoveFileButton from './MoveFileButton';
 import RenameFileButton from './RenameFileButton';
+import DownloadButton from './DownloadButton';
 
 // Copy/Cut icons
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -153,7 +154,10 @@ export default function DriveFilesList({
                       currentName={file.name}
                       onRenameSuccess={onDeleteFile}
                     />
-
+                    
+                    {/* Download */}
+                    <DownloadButton file={file} />
+                    
                     {/* Copy */}
                     <IconButton onClick={() => setClipboard({ fileId: file.id, action: "copy" })}>
                       <ContentCopyIcon fontSize="small" />
