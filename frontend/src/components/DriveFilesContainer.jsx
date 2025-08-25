@@ -9,6 +9,10 @@ import UploadModal from './modals/UploadModal';
 import CreateFolderModal from './modals/CreateFolderModal';
 import useDriveFiles from '../hooks/useDriveFiles';
 
+// NEW: batch selection hook and action bar
+import useBatchAction from '../hooks/useBatchAction';
+import BatchActionBar from './BatchActionBar';
+
 export default function DriveFilesContainer({ reloadFlag }) {
   const { currentFolder, folderStack, goBack, goToBreadcrumb, goToFolder } = useCurrentFolder();
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -16,6 +20,9 @@ export default function DriveFilesContainer({ reloadFlag }) {
 
   // 🔹 Clipboard state
   const [clipboard, setClipboard] = useState(null);
+
+  // 🔹 Batch selection
+  const batch = useBatchAction(); // NEW
 
   const {
     files,
@@ -34,6 +41,42 @@ export default function DriveFilesContainer({ reloadFlag }) {
   // Folder click handler
   const handleFolderClick = (folderId, folderName) => {
     goToFolder({ id: folderId, name: folderName });
+  };
+
+  // -----------------------
+  // Batch action handlers
+  // -----------------------
+  const handleBatchDownload = async () => {
+    if (batch.selectedItems.length === 0) return;
+    try {
+      const res = await fetch('/api/drive/files/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileIds: batch.selectedItems }),
+      });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'download.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error('Batch download failed:', err);
+    }
+  };
+
+  const handleBatchCopy = () => {
+    if (batch.selectedItems.length === 0) return;
+    // placeholder: implement batch copy logic
+    console.log('Copy batch:', batch.selectedItems);
+  };
+
+  const handleBatchCut = () => {
+    if (batch.selectedItems.length === 0) return;
+    // placeholder: implement batch cut/move logic
+    console.log('Cut/Move batch:', batch.selectedItems);
   };
 
   return (
@@ -81,6 +124,15 @@ export default function DriveFilesContainer({ reloadFlag }) {
         </Alert>
       )}
 
+      {/* NEW: BatchActionBar */}
+      <BatchActionBar
+        selectedItems={batch.selectedItems}
+        onDownload={handleBatchDownload}
+        onCopy={handleBatchCopy}
+        onCut={handleBatchCut}
+        onClearSelection={batch.clearSelection}
+      />
+
       <DriveFilesList
         files={files}
         loading={loading}
@@ -88,9 +140,13 @@ export default function DriveFilesContainer({ reloadFlag }) {
         order={order}
         onSortChange={handleSortChange}
         onFolderClick={handleFolderClick} // ✅ restored
-        onDeleteFile={() => fetchFiles(null, currentFolder.id)} // NEW: refresh files after delete
+        onDeleteFile={() => {
+          fetchFiles(null, currentFolder.id);
+          batch.clearSelection(); // NEW: clear selection after delete
+        }}
         currentFolder={currentFolder}
         setClipboard={setClipboard}   // pass clipboard setter
+        batch={batch}                 // NEW: pass batch selection
       />
 
       <PaginationControl

@@ -59,6 +59,7 @@ export default function DriveFilesList({
   onDeleteFile,
   currentFolder,
   setClipboard, // ✅ receive prop
+  batch,         // NEW: batch selection
 }) {
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden', p: 2 }}>
@@ -77,6 +78,18 @@ export default function DriveFilesList({
           <Table stickyHeader aria-label="Google Drive files table">
             <TableHead>
               <TableRow>
+                {/* NEW: select all checkbox column */}
+                <TableCell sx={{ width: 40 }}>
+                  <input
+                    type="checkbox"
+                    checked={batch?.selectedItems.length === files.length && files.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) batch?.setSelectedItems(files.map(f => f.id));
+                      else batch?.clearSelection();
+                    }}
+                  />
+                </TableCell>
+
                 <TableCell sx={{ minWidth: 300 }}>
                   <TableSortLabel
                     active={orderBy === 'name'}
@@ -114,6 +127,15 @@ export default function DriveFilesList({
             <TableBody>
               {files.map((file) => (
                 <TableRow hover tabIndex={-1} key={file.id}>
+                  {/* NEW: row checkbox */}
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={batch?.isSelected(file.id)}
+                      onChange={(e) => batch?.toggleItem(file.id, e.target.checked)}
+                    />
+                  </TableCell>
+
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {mimeTypeIcons[file.mimeType] || <InsertDriveFileIcon />}
