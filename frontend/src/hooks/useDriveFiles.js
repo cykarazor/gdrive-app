@@ -14,19 +14,35 @@ export default function useDriveFiles(currentFolder, reloadFlag, rowsPerPageDefa
   const [nextPageToken, setNextPageToken] = useState(null);
   const [pageTokens, setPageTokens] = useState(['']);
 
+  // NEW: track error messages (e.g. expired token)
+  const [error, setError] = useState(null);
+
   const fetchFiles = useCallback(
     async (token = null, folderIdParam = currentFolder.id) => {
       setLoading(true);
+      setError(null); // NEW: clear any prior error before loading
       try {
         const params = { pageSize: rowsPerPage, orderBy: `${orderBy} ${order}`, folderId: folderIdParam };
         if (token) params.pageToken = token;
+
         const res = await axios.get(`${API_BASE_URL}/api/drive/files`, { params });
+
         setFiles(res.data.files || []);
         setNextPageToken(res.data.nextPageToken || null);
       } catch (err) {
-        console.error('Failed to fetch files:', err);
-        setFiles([]);
-        setNextPageToken(null);
+        // NEW: handle Google token expired error specifically
+        if (err?.response?.status === 401 && err?.response?.data?.error === 'TokenExpired') {
+          console.warn('Token expired:', err.response.data);
+          setFiles([]); // optional: clear stale list
+          setNextPageToken(null);
+          setError(err.response.data.message || 'Your Google Drive token has expired. Please reauthorize.');
+        } else {
+          // OLD:
+          console.error('Failed to fetch files:', err);
+          setFiles([]);
+          setNextPageToken(null);
+          setError('Failed to load files.'); // NEW: generic error for UI
+        }
       } finally {
         setLoading(false);
       }
@@ -73,6 +89,7 @@ export default function useDriveFiles(currentFolder, reloadFlag, rowsPerPageDefa
   return {
     files,
     loading,
+    error, // NEW: expose error so UI can display it
     orderBy,
     order,
     page,

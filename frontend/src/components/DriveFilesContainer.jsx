@@ -1,6 +1,6 @@
-//frontend/src/components/DriveFilesContainer.jsx
+// frontend/src/components/DriveFilesContainer.jsx
 import { useState } from 'react';
-import { Box } from '@mui/material';
+import { Box, Alert, Link } from '@mui/material'; // NEW: import Link
 import { useCurrentFolder } from '../context/CurrentFolderContext';
 import DriveToolbar from './DriveToolbar';
 import DriveFilesList from './DriveFilesList';
@@ -20,6 +20,7 @@ export default function DriveFilesContainer({ reloadFlag }) {
   const {
     files,
     loading,
+    error, // NEW: receive error from hook
     orderBy,
     order,
     page,
@@ -69,6 +70,16 @@ export default function DriveFilesContainer({ reloadFlag }) {
           setCreateFolderOpen(false);
         }}
       />
+
+      {/* NEW: show token expired or other errors before file list with clickable reauthorize */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}{' '}
+          <Link href="/auth/google" underline="always" color="inherit">
+            Reauthorize
+          </Link>
+        </Alert>
+      )}
 
       <DriveFilesList
         files={files}
